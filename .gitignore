@@ -1,0 +1,19 @@
+# ---------- Backend (Python) ----------
+kanban-backend/venv/
+kanban-backend/__pycache__/
+kanban-backend/**/__pycache__/
+kanban-backend/*.pyc
+kanban-backend/.pytest_cache/
+kanban-backend/.env
+
+# ---------- Frontend (Node/Vite) ----------
+kanban-frontend/node_modules/
+kanban-frontend/dist/
+kanban-frontend/.env
+kanban-frontend/.vite/
+
+# ---------- Generales ----------
+.DS_Store
+.vscode/
+*.log
+.idea/

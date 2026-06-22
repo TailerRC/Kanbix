@@ -1,0 +1,528 @@
+# Módulo 3: Tableros, Columnas y Tareas
+
+> Gestión de tableros Kanban, columnas, tareas, movimientos entre columnas y comentarios.
+
+---
+
+## Endpoints
+
+### POST /api/v1/projects/{project_id}/boards
+
+Crea un nuevo tablero Kanban dentro de un proyecto.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Parámetros de ruta
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| project_id | string | Sí | ID del proyecto (ObjectId de MongoDB) |
+
+#### Request Body
+
+```json
+{
+  "name": "Sprint 5",
+  "description": "Tablero del Sprint 5"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| name | string | Sí | Nombre del tablero |
+| description | string | No | Descripción opcional del tablero |
+
+#### Response — 201 Created
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "project_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "name": "Sprint 5",
+  "description": "Tablero del Sprint 5",
+  "created_at": "2026-06-21T12:00:00Z"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Sin permisos para crear tableros en este proyecto |
+| 404 | Proyecto no encontrado |
+
+---
+
+### GET /api/v1/projects/{project_id}/boards
+
+Lista todos los tableros de un proyecto.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Response — 200 OK
+
+```json
+[
+  {
+    "id": "64f3a1b2c5d6e7f8a9b0c1d2",
+    "name": "Sprint 5",
+    "description": "Tablero del Sprint 5",
+    "column_count": 4,
+    "created_at": "2026-06-21T12:00:00Z"
+  }
+]
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Proyecto no encontrado |
+
+---
+
+### GET /api/v1/projects/{project_id}/boards/{board_id}
+
+Obtiene un tablero con todas sus columnas y tareas.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Response — 200 OK
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "name": "Sprint 5",
+  "columns": [
+    {
+      "id": "64f3a1b2c5d6e7f8a9b0c333",
+      "name": "To Do",
+      "position": 1,
+      "tasks": [
+        {
+          "id": "64f3a1b2c5d6e7f8a9b0c444",
+          "title": "Implementar login",
+          "assignee": "Juan Pérez",
+          "priority": "Alta",
+          "due_date": "2026-06-30T18:00:00Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tablero o proyecto no encontrado |
+
+---
+
+### PUT /api/v1/projects/{project_id}/boards/{board_id}
+
+Actualiza el nombre o descripción de un tablero.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "name": "Sprint 5 — Corregido",
+  "description": "Nueva descripción"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| name | string | No | Nuevo nombre del tablero |
+| description | string | No | Nueva descripción |
+
+#### Response — 200 OK
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "name": "Sprint 5 — Corregido",
+  "updated_at": "2026-06-22T10:00:00Z"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Sin permisos para modificar este tablero |
+| 404 | Tablero no encontrado |
+
+---
+
+### DELETE /api/v1/projects/{project_id}/boards/{board_id}
+
+Elimina un tablero y todas sus tareas.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Response — 200 OK
+
+```json
+{
+  "message": "Tablero eliminado exitosamente"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Sin permisos para eliminar este tablero |
+| 404 | Tablero no encontrado |
+
+---
+
+### POST /api/v1/boards/{board_id}/columns
+
+Crea una nueva columna en un tablero.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "name": "En Progreso",
+  "position": 2
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| name | string | Sí | Nombre de la columna |
+| position | integer | Sí | Posición ordinal dentro del tablero |
+
+#### Response — 201 Created
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c555",
+  "board_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "name": "En Progreso",
+  "position": 2
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tablero no encontrado |
+| 409 | Ya existe una columna en esa posición |
+
+---
+
+### PUT /api/v1/boards/{board_id}/columns/{column_id}
+
+Actualiza el nombre o posición de una columna.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "name": "En Revisión",
+  "position": 3
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| name | string | No | Nuevo nombre |
+| position | integer | No | Nueva posición |
+
+#### Response — 200 OK
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c555",
+  "name": "En Revisión",
+  "position": 3
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Columna no encontrada |
+
+---
+
+### POST /api/v1/boards/{board_id}/tasks
+
+Crea una nueva tarea dentro de una columna.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "title": "Implementar login con JWT",
+  "description": "Crear el endpoint de autenticación usando JWT",
+  "column_id": "64f3a1b2c5d6e7f8a9b0c333",
+  "priority": "Alta",
+  "assignee_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "due_date": "2026-06-30T18:00:00Z",
+  "tags": ["backend", "auth"]
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| title | string | Sí | Título de la tarea |
+| description | string | No | Descripción detallada |
+| column_id | string | No | ID de la columna destino (default: primera columna) |
+| priority | string | No | Alta \| Media \| Baja (default: Media) |
+| assignee_id | string | No | ID del usuario asignado |
+| due_date | string | No | Fecha límite en ISO 8601 UTC |
+| tags | array[string] | No | Etiquetas para clasificación |
+
+#### Response — 201 Created
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c444",
+  "board_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "column_id": "64f3a1b2c5d6e7f8a9b0c333",
+  "title": "Implementar login con JWT",
+  "priority": "Alta",
+  "status": "To Do",
+  "created_at": "2026-06-21T12:00:00Z"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tablero o columna no encontrada |
+| 422 | Datos inválidos |
+
+---
+
+### PUT /api/v1/tasks/{task_id}
+
+Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "title": "Implementar login con JWT + Refresh Token",
+  "priority": "Alta",
+  "description": "Incluir también la lógica de refresh token"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| title | string | No | Nuevo título |
+| description | string | No | Nueva descripción |
+| priority | string | No | Alta \| Media \| Baja |
+| assignee_id | string | No | Cambiar asignado |
+| due_date | string | No | Cambiar fecha límite |
+
+#### Response — 200 OK
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c444",
+  "title": "Implementar login con JWT + Refresh Token",
+  "updated_at": "2026-06-22T10:00:00Z"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tarea no encontrada |
+
+---
+
+### PATCH /api/v1/tasks/{task_id}/move
+
+Mueve una tarea a otra columna (cambio de estado).
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "column_id": "64f3a1b2c5d6e7f8a9b0c555",
+  "position": 1
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| column_id | string | Sí | ID de la columna destino |
+| position | integer | No | Posición dentro de la columna (default: al final) |
+
+#### Response — 200 OK
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c444",
+  "column_id": "64f3a1b2c5d6e7f8a9b0c555",
+  "position": 1,
+  "status": "En Progreso"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tarea o columna no encontrada |
+| 409 | Movimiento no permitido por reglas del workflow |
+
+---
+
+### DELETE /api/v1/tasks/{task_id}
+
+Elimina una tarea y sus subtareas asociadas.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Response — 200 OK
+
+```json
+{
+  "message": "Tarea eliminada exitosamente"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Sin permisos para eliminar esta tarea |
+| 404 | Tarea no encontrada |
+
+---
+
+### POST /api/v1/tasks/{task_id}/comments
+
+Agrega un comentario a una tarea.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Request Body
+
+```json
+{
+  "content": "@Ana revisa la implementación del refresh token"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| content | string | Sí | Texto del comentario (soporta menciones @usuario) |
+
+#### Response — 201 Created
+
+```json
+{
+  "id": "64f3a1b2c5d6e7f8a9b0c666",
+  "task_id": "64f3a1b2c5d6e7f8a9b0c444",
+  "author_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "content": "@Ana revisa la implementación del refresh token",
+  "created_at": "2026-06-21T14:00:00Z"
+}
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tarea no encontrada |
+| 422 | Contenido vacío o excede el máximo de caracteres |
+
+---
+
+### GET /api/v1/tasks/{task_id}/comments
+
+Obtiene todos los comentarios de una tarea, ordenados por fecha de creación.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Response — 200 OK
+
+```json
+[
+  {
+    "id": "64f3a1b2c5d6e7f8a9b0c666",
+    "author": "Juan Pérez",
+    "content": "@Ana revisa la implementación del refresh token",
+    "created_at": "2026-06-21T14:00:00Z"
+  }
+]
+```
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 404 | Tarea no encontrada |
+
+---
+
+## Resumen de Endpoints
+
+| # | Método | Ruta | Descripción |
+|---|--------|------|-------------|
+| 1 | POST | /api/v1/projects/{project_id}/boards | Crear tablero |
+| 2 | GET | /api/v1/projects/{project_id}/boards | Listar tableros |
+| 3 | GET | /api/v1/projects/{project_id}/boards/{board_id} | Obtener tablero con columnas y tareas |
+| 4 | PUT | /api/v1/projects/{project_id}/boards/{board_id} | Actualizar tablero |
+| 5 | DELETE | /api/v1/projects/{project_id}/boards/{board_id} | Eliminar tablero |
+| 6 | POST | /api/v1/boards/{board_id}/columns | Crear columna |
+| 7 | PUT | /api/v1/boards/{board_id}/columns/{column_id} | Actualizar columna |
+| 8 | POST | /api/v1/boards/{board_id}/tasks | Crear tarea |
+| 9 | PUT | /api/v1/tasks/{task_id} | Actualizar tarea |
+| 10 | PATCH | /api/v1/tasks/{task_id}/move | Mover tarea entre columnas |
+| 11 | DELETE | /api/v1/tasks/{task_id} | Eliminar tarea |
+| 12 | POST | /api/v1/tasks/{task_id}/comments | Agregar comentario |
+| 13 | GET | /api/v1/tasks/{task_id}/comments | Listar comentarios |
+
+## Formato Estándar de Errores
+
+Todos los errores devuelven la misma estructura JSON. El frontend React debe leer el campo `detail` y mostrarlo directamente al usuario.
+
+```json
+{
+  "detail": "Mensaje descriptivo del error",
+  "campo": "nombre_del_campo_con_error",
+  "codigo": 400
+}
+```

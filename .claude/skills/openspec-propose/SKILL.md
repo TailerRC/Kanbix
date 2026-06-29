@@ -26,6 +26,20 @@ When ready to implement, run /opsx-apply
 
 **Steps**
 
+0. **MANDATORY — Read docs/ before creating any artifact**
+
+   **Load the `sdd-docs` skill NOW.** Follow its steps for the module being planned.
+
+   1. Identify the module number from the change name (e.g. `modulo1-auth` → Módulo 1)
+   2. Open and read `docs/README.md` to locate the contract file
+   3. Open and read the contract: `docs/contratos/moduloN_*.md`
+   4. Open and read `docs/reglas_negocio.md` — filter rules relevant to this module
+   5. Open and read `docs/matriz_roles_permisos.md` — verify role permissions for endpoints
+   6. Open and read any relevant ADRs from `docs/adr/`
+   7. **Now proceed with OpenSpecs artifact creation below**
+
+   The docs/ folder is the source of truth. ALL artifacts (proposal, specs, design, tasks) must be based on what's in those documents.
+
 1. **If no clear input provided, ask what they want to build**
 
    Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:

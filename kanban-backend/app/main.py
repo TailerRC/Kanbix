@@ -5,12 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
+from app.modules.auth.model import ensure_indexes
+from app.modules.auth.routes import router as auth_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     await connect_to_mongo()
+    await ensure_indexes()
     yield
     # Shutdown
     await close_mongo_connection()
@@ -31,6 +34,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
+
 
 @app.get("/")
 async def root():
@@ -40,13 +45,3 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
-
-
-# --- Aquí se incluirán los routers de cada módulo ---
-# from app.routers import auth_router, projects_router, tasks_router, sprints_router, alerts_router, metrics_router
-# app.include_router(auth_router.router, prefix="/auth", tags=["Autenticación"])
-# app.include_router(projects_router.router, prefix="/projects", tags=["Proyectos"])
-# app.include_router(tasks_router.router, prefix="/tasks", tags=["Tareas"])
-# app.include_router(sprints_router.router, prefix="/sprints", tags=["Sprints"])
-# app.include_router(alerts_router.router, prefix="/alerts", tags=["Alertas"])
-# app.include_router(metrics_router.router, prefix="/metrics", tags=["Métricas"])

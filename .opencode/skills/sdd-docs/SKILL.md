@@ -27,8 +27,9 @@ Ejecutar estos pasos en orden:
 2. **Leer el contrato del módulo** (`docs/contratos/moduloN_*.md`) — entender todos los endpoints, parámetros, respuestas y errores.
 3. **Leer `docs/reglas_negocio.md`** — filtrar las reglas que aplican al módulo.
 4. **Leer `docs/matriz_roles_permisos.md`** — verificar qué roles tienen acceso a cada endpoint.
-5. **Leer el ADR relevante** si la decisión técnica del módulo tiene un ADR asociado.
-6. Solo después de los pasos 1–5: crear los artifacts de OpenSpecs o empezar a codificar.
+5. **Si el módulo tiene componentes frontend**: leer `docs/diseno_visual.md` y seguir los pasos de la skill `sdd-visual-design`.
+6. **Leer el ADR relevante** si la decisión técnica del módulo tiene un ADR asociado.
+7. Solo después de los pasos 1–6: crear los artifacts de OpenSpecs o empezar a codificar.
 
 ---
 
@@ -106,5 +107,6 @@ Antes de hacer commit de código de un módulo, verificar:
 - [ ] El endpoint existe en el contrato del módulo (`docs/contratos/`)
 - [ ] Los roles y permisos coinciden con `docs/matriz_roles_permisos.md`
 - [ ] Las reglas de negocio que aplican están implementadas (ver `docs/reglas_negocio.md`)
+- [ ] **Frontend**: los componentes siguen `docs/diseno_visual.md` (paleta, tipografía, layout)
 - [ ] No hay imports directos entre módulos
 - [ ] El formato de respuesta sigue el estándar definido en `AGENTS.md` § 6

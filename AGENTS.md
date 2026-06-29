@@ -22,6 +22,63 @@
 
 ---
 
+## 1b. Cómo Ejecutar el Proyecto
+
+### Backend (FastAPI + MongoDB)
+
+```bash
+# 1. Pararse en la carpeta del backend
+cd kanban-backend
+
+# 2. Crear y activar entorno virtual (primera vez)
+python -m venv .venv
+.venv\Scripts\activate    # Windows
+source .venv/bin/activate # Linux/Mac
+
+# 3. Instalar dependencias (primera vez)
+pip install -r requirements.txt
+
+# 4. Configurar variables de entorno
+#    Copiar .env.example a .env y completar:
+#    - MONGO_URI: conexión a MongoDB Atlas
+#    - JWT_SECRET_KEY: clave secreta para JWT
+#    Ver `.env.example` para la lista completa.
+
+# 5. Iniciar servidor de desarrollo
+python -m uvicorn app.main:app --reload --port 8000
+
+# El servidor queda en http://localhost:8000
+# Documentación automática: http://localhost:8000/docs
+```
+
+### Frontend (React + Vite + TypeScript)
+
+```bash
+# 1. Pararse en la carpeta del frontend
+cd kanban-frontend
+
+# 2. Instalar dependencias (primera vez)
+npm install
+
+# 3. Configurar variables de entorno (opcional)
+#    Crear .env con VITE_API_URL si se necesita apuntar a otro backend:
+#    VITE_API_URL=http://localhost:8000
+
+# 4. Iniciar servidor de desarrollo
+npm run dev
+
+# El servidor queda en http://localhost:5173
+# El proxy de Vite redirige /api/* a http://localhost:8000
+```
+
+### Ambos servidores juntos
+
+Para desarrollo, ejecutar **backend y frontend en terminales separadas**:
+- Terminal 1: `cd kanban-backend && python -m uvicorn app.main:app --reload --port 8000`
+- Terminal 2: `cd kanban-frontend && npm run dev`
+
+---
+
 ## 2. Módulos del Sistema
 
 | # | Módulo | Backend path | Frontend path | Contrato |
@@ -59,19 +116,25 @@ Antes de escribir código de cualquier módulo:
 2. Leer el contrato completo (`docs/contratos/moduloN_*.md`).
 3. Leer `docs/reglas_negocio.md` para las reglas que aplican al módulo.
 4. Leer `docs/matriz_roles_permisos.md` para los permisos de los endpoints.
-5. Seguir los pasos de la skill `sdd-docs`.
+5. **Si el módulo tiene componentes frontend**: leer `docs/diseno_visual.md` y seguir los pasos de la skill `sdd-visual-design`.
+6. Seguir los pasos de la skill `sdd-docs`.
 
 **No existe "empezar a codear para entender"**. Primero se entiende, después se codea.
 
 ---
 
-## 5. Skill sdd-docs — Referencia Obligatoria
+## 5. Skills — Referencia Obligatoria
 
-Antes de codificar cualquier módulo, cargar y seguir la skill:
+Antes de codificar cualquier módulo, cargar y seguir las skills según corresponda:
 
-```
-.agents/skills/sdd-docs/SKILL.md
-```
+| Skill | Cuándo usarla |
+|-------|---------------|
+| `sdd-docs` | **Siempre** — carga contratos, reglas, permisos y estructura del proyecto |
+| `sdd-visual-design` | **Solo para frontend** — carga `docs/diseno_visual.md` y verifica que los componentes sigan el sistema de diseño |
+
+Ruta de las skills:
+- `.agents/skills/sdd-docs/SKILL.md`
+- `.agents/skills/sdd-visual-design/SKILL.md`
 
 ---
 

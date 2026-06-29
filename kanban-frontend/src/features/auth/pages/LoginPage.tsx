@@ -3,12 +3,16 @@ import {
   Alert,
   Box,
   Button,
-  Container,
   TextField,
   Typography,
+  Link,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
-import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff, LogIn } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import AuthLayout from "../../../shared/layout/AuthLayout";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -17,6 +21,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,41 +41,76 @@ export default function LoginPage() {
   };
 
   return (
-    <Container maxWidth="xs">
-      <Box sx={{ mt: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-        <Typography variant="h4" align="center">
-          Iniciar Sesión
-        </Typography>
-
+    <AuthLayout
+      title="Iniciar sesión"
+      subtitle="Ingresá tu email y contraseña para acceder a Kanbix."
+    >
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         {error && <Alert severity="error">{error}</Alert>}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Contraseña"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-          />
-          <Button type="submit" variant="contained" disabled={loading} fullWidth>
-            {loading ? "Ingresando..." : "Ingresar"}
-          </Button>
-        </Box>
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          fullWidth
+          placeholder="tu@email.com"
+          autoFocus
+        />
 
-        <Typography align="center">
+        <TextField
+          label="Contraseña"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          fullWidth
+          placeholder="••••••••"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                  size="small"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading}
+          fullWidth
+          size="large"
+          startIcon={<LogIn size={18} />}
+          sx={{ mt: 1 }}
+        >
+          {loading ? "Ingresando..." : "Ingresar"}
+        </Button>
+
+        <Typography
+          sx={{ textAlign: "center", fontSize: "14px", color: "text.secondary" }}
+        >
           ¿No tenés cuenta?{" "}
-          <Link to="/register">Registrate</Link>
+          <Link
+            href="/register"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/register");
+            }}
+            sx={{ fontWeight: 600, cursor: "pointer" }}
+          >
+            Registrate
+          </Link>
         </Typography>
       </Box>
-    </Container>
+    </AuthLayout>
   );
 }

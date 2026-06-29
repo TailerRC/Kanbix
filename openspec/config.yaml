@@ -1,0 +1,30 @@
+schema: spec-driven
+
+# Project context (optional)
+context: |
+  Kanbix — Sistema Kanban colaborativo
+  Stack: Python FastAPI + Motor (async MongoDB) / React + Vite + TypeScript
+  DB: MongoDB Atlas
+  Auth: JWT + Refresh Token (ADR-002)
+  Metodología: SDD (Spec-Driven Development)
+  No imports directos entre módulos (se llama API del otro módulo)
+  Archivos por módulo backend: routes.py, controller.py, service.py, model.py, schemas.py
+  Frontend: pages/, components/, hooks/, api/ por feature
+  Conventional commits con scope del módulo en inglés
+  Roles: Admin, ProjectManager, Developer, Viewer (ver docs/matriz_roles_permisos.md)
+  ADRs en docs/adr/
+
+# Per-artifact rules (optional)
+rules:
+  proposal:
+    - Mapear el módulo de la tabla en AGENTS.md §2
+    - Referenciar el contrato API en docs/contratos/
+    - Incluir reglas de negocio relevantes de docs/reglas_negocio.md
+  design:
+    - Seguir la estructura vertical slicing (backend) o feature slicing (frontend)
+    - No imports directos entre módulos — llamar API HTTP
+    - Referenciar ADRs relevantes
+  tasks:
+    - Separar backend y frontend
+    - Cada tarea debe ser implementable en ≤2hs
+    - Incluir verificación (tests o validación manual)

@@ -1,155 +1,62 @@
 # Kanbix
 
-Sistema Kanban desarrollado bajo el enfoque **Spec-Driven Development (SDD)**.
+Sistema Kanban colaborativo con gestión de proyectos, tableros drag & drop, tareas, notificaciones en tiempo real y reportes.
 
-Stack: **React + TypeScript** (frontend) · **FastAPI + Python** (backend) · **MongoDB Atlas** (base de datos)
+## Stack
 
----
+| Capa | Tecnología |
+|------|-----------|
+| Backend | Python 3.12 + FastAPI + Motor |
+| Base de datos | MongoDB Atlas |
+| Frontend | React 18 + Vite + TypeScript |
+| Auth | JWT + Refresh Token |
+| Tiempo real | WebSockets |
 
-## Estructura del repositorio
-
-```
-kanbix/
-├── docs/               # Especificaciones (reglas de negocio, RF, RNF, OpenAPI, etc.)
-├── kanban-backend/     # API en FastAPI
-└── kanban-frontend/    # SPA en React + Vite + TypeScript
-```
-
----
-
-## 1. Requisitos previos
-
-Cada integrante necesita instalado en su máquina:
-
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) v18 o superior (incluye npm)
-- [Python](https://www.python.org/) 3.11+ (recomendado 3.11 o 3.12; si usas 3.14 puede haber problemas de compilación con algunas librerías)
-- Un editor de código (VS Code recomendado)
-
-> **El `MONGO_URI` de MongoDB Atlas te lo comparte por separado quien creó el cluster** (ver sección 5). No está en el repositorio por seguridad.
-
----
-
-## 2. Clonar el repositorio
-
-```bash
-git clone https://github.com/<usuario>/kanbix.git
-cd kanbix
-```
-
----
-
-## 3. Levantar el Backend (FastAPI)
-
-```bash
-cd kanban-backend
-
-# Crear entorno virtual
-python -m venv venv
-
-# Activar entorno virtual
-# Windows (PowerShell):
-.\venv\Scripts\Activate
-
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Crear archivo de variables de entorno
-copy .env.example .env   # Windows
-```
-
-Abre `.env` y completa con los valores reales que te compartieron (ver sección 5):
+## Estructura del Repositorio
 
 ```
-MONGO_URI=<el que te compartieron por el grupo>
-JWT_SECRET_KEY=<cualquier texto largo, debe ser el mismo para todos>
+kanban-repo/
+├── kanban-backend/          # FastAPI — vertical slicing por módulo
+│   └── app/
+│       ├── config/          # settings.py, database.py, security.py
+│       ├── shared/          # middleware, utils
+│       └── modules/         # auth, projects, boards, planning, notifications, reports
+│
+├── kanban-frontend/         # React + Vite — feature slicing
+│   └── src/
+│       ├── shared/          # components, hooks, api, layouts, types
+│       └── features/        # auth, projects, kanban, planning, notifications, reports
+│
+├── docs/                    # 📚 Fuente de verdad — leer antes de codear
+│   ├── README.md            # Índice completo
+│   ├── contratos/           # Contratos API por módulo
+│   ├── requerimientos/      # RF + RNF
+│   └── adr/                 # Architecture Decision Records
+│
+├── AGENTS.md                # Cerebro para Antigravity
+├── CLAUDE.md                # Cerebro para Claude Code
+├── GEMINI.md                # Cerebro para Gemini CLI
+└── opencode.json            # Configuración OpenCode
 ```
 
-Levantar el servidor:
+## Documentación
 
-```bash
-uvicorn app.main:app --reload
-```
+→ Ver [`docs/README.md`](./docs/README.md) para el índice completo.
 
-Verifica que funciona:
-- API: http://localhost:8000
-- Documentación interactiva (Swagger): http://localhost:8000/docs
-- Health check: http://localhost:8000/health → debe responder `{"status":"ok"}`
+## Módulos
 
-En la consola también debe aparecer: `✅ Conectado a MongoDB Atlas`
+Fuente de verdad: [`docs/casos_uso_sistema_kanbix.md`](./docs/casos_uso_sistema_kanbix.md)
 
----
+| # | Módulo | Backend | Frontend | CUS |
+|---|--------|---------|---------|-----|
+| 1 | Autenticación y Usuarios | `modules/auth/` | `features/auth/` | CUS-AU-01 a 03 |
+| 2 | Proyectos y Equipos | `modules/projects/` | `features/projects/` | CUS-PE-01 a 04 |
+| 3 | Tablero Kanban y Tareas | `modules/boards/` | `features/kanban/` | CUS-TK-01 a 04 |
+| 4 | Planificación y Asignaciones | `modules/planning/` | `features/planning/` | CUS-PA-01 a 04 |
+| 5 | Alertas y Notificaciones | `modules/notifications/` | `features/notifications/` | CUS-AN-01 a 03 |
+| 6 | Reportes y Dashboard | `modules/reports/` | `features/reports/` | CUS-RD-01 a 04 |
 
-## 4. Levantar el Frontend (React + Vite)
+## Regla Fundamental
 
-En **otra terminal** (deja el backend corriendo en la primera):
-
-```bash
-cd kanban-frontend
-
-npm install
-
-copy .env.example .env   # Windows
-cp .env.example .env     # Mac/Linux
-```
-
-El `.env` ya viene con el valor correcto por defecto:
-```
-VITE_API_URL=http://localhost:8000
-```
-
-Levantar el servidor de desarrollo:
-
-```bash
-npm run dev
-```
-
-Abre el navegador en: http://localhost:5173
-
-Si todo está bien conectado, verás un recuadro verde: **"✅ Conectado al backend"**. Si sale en rojo, revisa que el backend siga corriendo en la otra terminal.
-
----
-
-## 5. Variables sensibles (MONGO_URI y JWT_SECRET_KEY)
-
-Estos valores **no se suben a GitHub** (están en `.gitignore`). El responsable del cluster de MongoDB Atlas debe compartir por un canal privado del equipo (WhatsApp, Discord, etc.) lo siguiente:
-
-```
-MONGO_URI=mongodb+srv://usuario:password@cluster.mongodb.net/?retryWrites=true&w=majority
-JWT_SECRET_KEY=una-clave-larga-acordada-por-el-equipo
-```
-
-> Importante: todos deben usar el **mismo** `JWT_SECRET_KEY`, si no, los tokens generados por un compañero no funcionarán al ser validados por otro.
-
----
-
-## 6. Documentación de especificaciones (SDD)
-
-Toda la documentación formal del proyecto vive en `docs/`:
-
-- `docs/reglas-negocio/` — Reglas de negocio (RN-01 a RN-30)
-- `docs/requerimientos/` — Requerimientos funcionales y no funcionales
-- `docs/casos-uso/` — Casos de uso del sistema
-- `docs/trazabilidad/` — Matriz de trazabilidad RF vs Casos de Uso
-- `docs/escenarios-calidad/` — Escenarios de calidad (estímulo-respuesta)
-- `docs/openapi/` — Contratos OpenAPI por módulo (fuente de verdad para los endpoints)
-
-Antes de implementar un módulo, revisa su contrato OpenAPI correspondiente en `docs/openapi/`.
-
----
-
-## Equipo
-
-| Código | Integrante |
-|---|---|
-| 202310515 | Chacón Uscamaita, Rodrigo Alessandro |
-| 202310518 | Caballero Medina, Gianfranco |
-| 202311402 | Carrasco Pariona, Jerzy Ramon |
-| 202211321 | Villon Nieto, Piero Alexander |
-| 202210525 | Meneses Meléndez, Allisson Leandra |
-| 202311383 | Cuadros Malaga, Diego Tomas |
-
-**Curso:** Arquitectura y Evolución de Software
-**Profesor:** Gipsy Miguel Ángel Arrunátegui Angulo
-**Universidad Ricardo Palma — 2026-I**
+> **SDD primero**: ningún módulo se codifica sin haber leído su contrato en `docs/contratos/`.
+> Ver `AGENTS.md` para el proceso completo.

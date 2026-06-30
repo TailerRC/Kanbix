@@ -268,9 +268,50 @@ Actualiza el nombre o posición de una columna.
 
 ---
 
+## Tareas
+
+### GET /api/v1/projects/{project_id}/tasks
+
+Obtiene todas las tareas de un proyecto para renderizar el tablero. Devuelve las tareas con su posición fraccional para soportar drag & drop sin reordenar toda la lista.
+
+**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+
+#### Parámetros de ruta
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| project_id | string | Sí | ID del proyecto (ObjectId de MongoDB) |
+
+#### Response — 200 OK
+
+```json
+[
+  {
+    "id": "64f3a1b2c5d6e7f8a9b0c1d2",
+    "project_id": "88f3a1b2c5d6e7f8a9b0c999",
+    "title": "Configurar MongoDB",
+    "status": "To Do",
+    "position": 65536.0,
+    "assignee_id": null
+  }
+]
+```
+
+> El campo `position` usa índices fraccionales (p.ej. 65536.0) para que el frontend pueda calcular nuevas posiciones al mover tarjetas sin reordenar toda la lista.
+
+#### Errors
+
+| Código | Descripción |
+|--------|-------------|
+| 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Usuario sin permisos para ver este proyecto |
+| 404 | Proyecto no encontrado |
+
+---
+
 ### POST /api/v1/boards/{board_id}/tasks
 
-Crea una nueva tarea dentro de una columna.
+Crea una nueva tarea dentro de una columna. Calcula automáticamente su posición al final de la columna elegida.
 
 **Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
 
@@ -294,7 +335,7 @@ Crea una nueva tarea dentro de una columna.
 | title | string | Sí | Título de la tarea |
 | description | string | No | Descripción detallada |
 | column_id | string | No | ID de la columna destino (default: primera columna) |
-| priority | string | No | Baja \| Media \| Alta \| Crítica (default: Media) |
+| priority | string | No | `Baja` \| `Media` \| `Alta` \| `Crítica` (default: Media) |
 | assignee_id | string | No | ID del usuario asignado |
 | due_date | string | No | Fecha límite en ISO 8601 UTC |
 | sprint_id | string | No | ID del sprint al que pertenece la tarea |
@@ -318,9 +359,10 @@ Crea una nueva tarea dentro de una columna.
 
 | Código | Descripción |
 |--------|-------------|
+| 400 | Dato faltante u obligatorio no provisto |
 | 401 | Token de acceso requerido, inválido o expirado |
 | 404 | Tablero o columna no encontrada |
-| 422 | Datos inválidos |
+| 422 | Datos inválidos (ej. `status` no válido) |
 
 ---
 
@@ -335,9 +377,10 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 ```json
 {
   "title": "Implementar login con JWT + Refresh Token",
+  "description": "Incluir también la lógica de refresh token",
+  "assignee_id": "64f3a1b2c5d6e7f8a9b0c1d2",
   "priority": "Alta",
-  "sprint_id": "64f3a...",
-  "description": "Incluir también la lógica de refresh token"
+  "sprint_id": "64f3a..."
 }
 ```
 
@@ -345,7 +388,7 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 |-------|------|-----------|-------------|
 | title | string | No | Nuevo título |
 | description | string | No | Nueva descripción |
-| priority | string | No | Baja \| Media \| Alta \| Crítica |
+| priority | string | No | `Baja` \| `Media` \| `Alta` \| `Crítica` |
 | assignee_id | string | No | Cambiar asignado |
 | due_date | string | No | Cambiar fecha límite |
 | sprint_id | string | No | Cambiar el sprint de la tarea |
@@ -356,6 +399,7 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 {
   "id": "64f3a1b2c5d6e7f8a9b0c444",
   "title": "Implementar login con JWT + Refresh Token",
+  "assignee_id": "64f3a1b2c5d6e7f8a9b0c1d2",
   "updated_at": "2026-06-22T10:00:00Z"
 }
 ```
@@ -365,13 +409,14 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 | Código | Descripción |
 |--------|-------------|
 | 401 | Token de acceso requerido, inválido o expirado |
-| 404 | Tarea no encontrada |
+| 404 | Tarea o usuario asignado no encontrados |
+| 422 | Datos con formato incorrecto |
 
 ---
 
 ### PATCH /api/v1/tasks/{task_id}/move
 
-Mueve una tarea a otra columna (cambio de estado).
+Mueve una tarea a otra columna (cambio de estado) usando índices fraccionales para soportar drag & drop.
 
 **Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
 
@@ -379,15 +424,15 @@ Mueve una tarea a otra columna (cambio de estado).
 
 ```json
 {
-  "column_id": "64f3a1b2c5d6e7f8a9b0c555",
-  "position": 1
+  "status": "In Progress",
+  "position": 98304.5
 }
 ```
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| column_id | string | Sí | ID de la columna destino |
-| position | integer | No | Posición dentro de la columna (default: al final) |
+| status | string | No | Nueva columna. Si se omite, mueve en la misma columna |
+| position | float | Sí | Nuevo valor de posición calculado por el frontend tras soltar la tarjeta |
 
 #### Response — 200 OK
 
@@ -395,8 +440,8 @@ Mueve una tarea a otra columna (cambio de estado).
 {
   "id": "64f3a1b2c5d6e7f8a9b0c444",
   "column_id": "64f3a1b2c5d6e7f8a9b0c555",
-  "position": 1,
-  "status": "En Progreso"
+  "status": "In Progress",
+  "position": 98304.5
 }
 ```
 
@@ -405,14 +450,15 @@ Mueve una tarea a otra columna (cambio de estado).
 | Código | Descripción |
 |--------|-------------|
 | 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Usuario sin permisos para modificar esta tarea |
 | 404 | Tarea o columna no encontrada |
-| 409 | Movimiento no permitido por reglas del workflow |
+| 409 | Conflicto de posición (requiere recalibración de índices) |
 
 ---
 
 ### DELETE /api/v1/tasks/{task_id}
 
-Elimina una tarea y sus subtareas asociadas.
+Elimina una tarea del tablero de forma permanente.
 
 **Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
 
@@ -420,7 +466,7 @@ Elimina una tarea y sus subtareas asociadas.
 
 ```json
 {
-  "message": "Tarea eliminada exitosamente"
+  "message": "Tarea eliminada correctamente"
 }
 ```
 
@@ -513,12 +559,13 @@ Obtiene todos los comentarios de una tarea, ordenados por fecha de creación.
 | 5 | DELETE | /api/v1/projects/{project_id}/boards/{board_id} | Eliminar tablero |
 | 6 | POST | /api/v1/boards/{board_id}/columns | Crear columna |
 | 7 | PUT | /api/v1/boards/{board_id}/columns/{column_id} | Actualizar columna |
-| 8 | POST | /api/v1/boards/{board_id}/tasks | Crear tarea |
-| 9 | PUT | /api/v1/tasks/{task_id} | Actualizar tarea |
-| 10 | PATCH | /api/v1/tasks/{task_id}/move | Mover tarea entre columnas |
-| 11 | DELETE | /api/v1/tasks/{task_id} | Eliminar tarea |
-| 12 | POST | /api/v1/tasks/{task_id}/comments | Agregar comentario |
-| 13 | GET | /api/v1/tasks/{task_id}/comments | Listar comentarios |
+| 8 | GET | /api/v1/projects/{project_id}/tasks | Listar todas las tareas del proyecto |
+| 9 | POST | /api/v1/boards/{board_id}/tasks | Crear tarea |
+| 10 | PUT | /api/v1/tasks/{task_id} | Actualizar tarea |
+| 11 | PATCH | /api/v1/tasks/{task_id}/move | Mover tarea entre columnas |
+| 12 | DELETE | /api/v1/tasks/{task_id} | Eliminar tarea |
+| 13 | POST | /api/v1/tasks/{task_id}/comments | Agregar comentario |
+| 14 | GET | /api/v1/tasks/{task_id}/comments | Listar comentarios |
 
 ## Formato Estándar de Errores
 

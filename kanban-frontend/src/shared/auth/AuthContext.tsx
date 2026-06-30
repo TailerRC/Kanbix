@@ -27,6 +27,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   clearChangePasswordFlag: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -91,6 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /** Llamar después de que el usuario cambió su contraseña exitosamente. */
   const clearChangePasswordFlag = useCallback(() => setMustChange(false), []);
 
+  /** Refresca el perfil del usuario desde la API (ej: tras actualizar datos). */
+  const refreshUser = useCallback(async () => {
+    const me = await api.get<User>('/auth/me');
+    setUser(me.data);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -100,8 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       clearChangePasswordFlag,
+      refreshUser,
     }),
-    [user, loading, mustChangePassword, login, logout, clearChangePasswordFlag]
+    [user, loading, mustChangePassword, login, logout, clearChangePasswordFlag, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

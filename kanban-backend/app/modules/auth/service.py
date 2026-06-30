@@ -604,3 +604,238 @@ async def ensure_seed_admin(db) -> None:
     )
     await db.users.insert_one(doc)
     print("[SEED] Admin inicial creado: admin@kanbix.com / Admin123 (cambiar en primer login)")
+
+
+# ---------------------------------------------------------------------------
+# Perfil propio — PATCH /auth/me
+# ---------------------------------------------------------------------------
+
+async def update_profile(db, user_id: str, nombre_completo: str | None, email: str | None) -> dict:
+    """Permite al usuario autenticado actualizar su nombre y/o correo."""
+    oid = to_object_id(user_id)
+    user = await db.users.find_one({"_id": oid})
+    if not user:
+        raise APIError(404, "Usuario no encontrado")
+
+    updates: dict = {}
+    if nombre_completo is not None:
+        updates["nombre_completo"] = nombre_completo.strip()
+    if email is not None:
+        email_lower = email.strip().lower()
+        if email_lower != user["email"]:
+            existing = await db.users.find_one({"email": email_lower})
+            if existing:
+                raise APIError(400, "El correo ya está registrado por otro usuario")
+        updates["email"] = email_lower
+
+    if not updates:
+        raise APIError(400, "No se proporcionaron campos para actualizar")
+
+    await db.users.update_one({"_id": oid}, {"$set": updates})
+    updated = await db.users.find_one({"_id": oid})
+
+    # Audit log
+    cambios = []
+    if "nombre_completo" in updates:
+        cambios.append(f"nombre a '{updates['nombre_completo']}'")
+    if "email" in updates:
+        cambios.append(f"email a '{updates['email']}'")
+    await log_action(
+        db,
+        id_usuario=user_id,
+        accion="ACTUALIZAR_PERFIL",
+        detalle=f"Usuario actualizó su perfil: {', '.join(cambios)}",
+        id_recurso=user_id,
+    )
+
+    return {
+        "id": str(updated["_id"]),
+        "email": updated["email"],
+        "nombre_completo": updated["nombre_completo"],
+        "rol_global": updated["rol_global"],
+        "cambiar_password": updated.get("cambiar_password", False),
+        "fecha_creacion": updated["fecha_creacion"],
+        "ultimo_acceso": updated.get("ultimo_acceso"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tickets de Soporte
+# ---------------------------------------------------------------------------
+
+def _ticket_to_dict(doc: dict, usuario: dict | None = None) -> dict:
+    return {
+        "id": str(doc["_id"]),
+        "id_usuario": str(doc["id_usuario"]),
+        "usuario_nombre": usuario.get("nombre_completo") if usuario else None,
+        "usuario_email": usuario.get("email") if usuario else None,
+        "tipo": doc["tipo"],
+        "asunto": doc["asunto"],
+        "descripcion": doc["descripcion"],
+        "estado": doc["estado"],
+        "nota_resolucion": doc.get("nota_resolucion"),
+        "fecha_creacion": doc["fecha_creacion"],
+        "fecha_actualizacion": doc["fecha_actualizacion"],
+    }
+
+
+async def create_ticket(db, user_id: str, tipo: str, asunto: str, descripcion: str) -> dict:
+    """Crea un ticket de soporte para el usuario autenticado."""
+    oid = to_object_id(user_id)
+    user = await db.users.find_one({"_id": oid})
+    if not user:
+        raise APIError(404, "Usuario no encontrado")
+
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id_usuario": user_id,
+        "tipo": tipo,
+        "asunto": asunto.strip(),
+        "descripcion": descripcion.strip(),
+        "estado": "ABIERTO",
+        "nota_resolucion": None,
+        "fecha_creacion": now,
+        "fecha_actualizacion": now,
+    }
+    result = await db.tickets.insert_one(doc)
+    doc["_id"] = result.inserted_id
+
+    # Notificar al Admin por email
+    admin = await db.users.find_one({"rol_global": "Admin", "activo": True})
+    if admin:
+        asyncio.create_task(send_email_via_resend(
+            to_email=admin["email"],
+            subject=f"[Kanbix] Nuevo ticket de soporte: {asunto}",
+            html_content=(
+                f"<h2>Nuevo Ticket de Soporte</h2>"
+                f"<p><strong>De:</strong> {user['nombre_completo']} ({user['email']})</p>"
+                f"<p><strong>Tipo:</strong> {tipo}</p>"
+                f"<p><strong>Asunto:</strong> {asunto}</p>"
+                f"<p><strong>Descripción:</strong><br>{descripcion}</p>"
+                f"<hr><p>Revísalo en la sección <em>Tickets de Atención</em> del panel Admin.</p>"
+            )
+        ))
+
+    return _ticket_to_dict(doc, user)
+
+
+async def list_my_tickets(db, user_id: str, page: int = 1, limit: int = 20) -> dict:
+    """Lista los tickets del usuario autenticado (paginado)."""
+    skip = (page - 1) * limit
+    cursor = db.tickets.find({"id_usuario": user_id}).sort("fecha_creacion", -1).skip(skip).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    total = await db.tickets.count_documents({"id_usuario": user_id})
+
+    # Obtener datos del propio usuario
+    oid = to_object_id(user_id)
+    user = await db.users.find_one({"_id": oid})
+
+    data = [_ticket_to_dict(d, user) for d in docs]
+    return {"total": total, "page": page, "limit": limit, "data": data}
+
+
+async def list_all_tickets(db, page: int = 1, limit: int = 50) -> dict:
+    """Lista todos los tickets del sistema para el Admin (paginado, más recientes primero)."""
+    skip = (page - 1) * limit
+    cursor = db.tickets.find().sort("fecha_creacion", -1).skip(skip).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    total = await db.tickets.count_documents({})
+
+    # Resolver usuarios en batch
+    user_ids = list({d["id_usuario"] for d in docs})
+    user_oids = [to_object_id(uid) for uid in user_ids if uid]
+    users_cursor = db.users.find({"_id": {"$in": user_oids}}, {"nombre_completo": 1, "email": 1})
+    users_list = await users_cursor.to_list(length=len(user_oids))
+    user_map = {str(u["_id"]): u for u in users_list}
+
+    data = [_ticket_to_dict(d, user_map.get(d["id_usuario"])) for d in docs]
+    return {"total": total, "page": page, "limit": limit, "data": data}
+
+
+async def update_ticket_status(db, ticket_id: str, admin_id: str, estado: str, nota_resolucion: str | None) -> dict:
+    """Admin actualiza el estado de un ticket y opcionalmente deja una nota."""
+    oid = to_object_id(ticket_id)
+    ticket = await db.tickets.find_one({"_id": oid})
+    if not ticket:
+        raise APIError(404, "Ticket no encontrado")
+
+    now = datetime.now(timezone.utc)
+    await db.tickets.update_one(
+        {"_id": oid},
+        {"$set": {
+            "estado": estado,
+            "nota_resolucion": nota_resolucion,
+            "fecha_actualizacion": now,
+        }},
+    )
+    updated = await db.tickets.find_one({"_id": oid})
+
+    # Resolver usuario solicitante
+    uid = updated["id_usuario"]
+    user_oid = to_object_id(uid)
+    user = await db.users.find_one({"_id": user_oid})
+
+    # Notificar al usuario por email si hay cambio a RESUELTO o CERRADO
+    if estado in ("RESUELTO", "CERRADO") and user:
+        asyncio.create_task(send_email_via_resend(
+            to_email=user["email"],
+            subject=f"[Kanbix] Tu ticket fue {estado.lower()}: {updated['asunto']}",
+            html_content=(
+                f"<h2>Actualización de Ticket</h2>"
+                f"<p>Hola <strong>{user['nombre_completo']}</strong>,</p>"
+                f"<p>Tu ticket <em>{updated['asunto']}</em> ha sido marcado como <strong>{estado}</strong>.</p>"
+                + (f"<p><strong>Nota del equipo TI:</strong><br>{nota_resolucion}</p>" if nota_resolucion else "")
+                + "<hr><p>Gracias por usar Kanbix.</p>"
+            )
+        ))
+
+    return _ticket_to_dict(updated, user)
+
+
+# Preferencias de Notificación
+async def get_user_preferences(db, user_id: str) -> dict:
+    """Obtiene las preferencias de notificación de un usuario, creándolas por defecto si no existen."""
+    pref = await db.user_preferences.find_one({"id_usuario": user_id})
+    if not pref:
+        # Valores por defecto: todo activo
+        pref = {
+            "id_usuario": user_id,
+            "notif_asignacion": True,
+            "notif_comentarios": True,
+            "notif_email": True,
+            "notif_tickets": True,
+        }
+        await db.user_preferences.insert_one(pref.copy())
+    
+    # Retornar los campos requeridos mapeados
+    return {
+        "id_usuario": str(pref["id_usuario"]),
+        "notif_asignacion": bool(pref["notif_asignacion"]),
+        "notif_comentarios": bool(pref["notif_comentarios"]),
+        "notif_email": bool(pref["notif_email"]),
+        "notif_tickets": bool(pref["notif_tickets"]),
+    }
+
+
+async def update_user_preferences(db, user_id: str, payload) -> dict:
+    """Crea o actualiza las preferencias de notificación de un usuario."""
+    now = datetime.now(timezone.utc)
+    update_data = {
+        "notif_asignacion": payload.notif_asignacion,
+        "notif_comentarios": payload.notif_comentarios,
+        "notif_email": payload.notif_email,
+        "notif_tickets": payload.notif_tickets,
+        "fecha_actualizacion": now
+    }
+    
+    await db.user_preferences.update_one(
+        {"id_usuario": user_id},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return {
+        "id_usuario": user_id,
+        **update_data
+    }
+

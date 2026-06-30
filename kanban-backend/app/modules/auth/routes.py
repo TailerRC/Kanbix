@@ -35,7 +35,15 @@ from app.modules.auth.schemas import (
     AdminUpdateUserRequest,
     UserListItem,
     AuditLogListResponse,
+    UpdateProfileRequest,
+    TicketCreateRequest,
+    TicketUpdateRequest,
+    TicketResponse,
+    TicketListResponse,
+    UserPreferencesRequest,
+    UserPreferencesResponse,
 )
+
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 admin_router = APIRouter(prefix="/admin", tags=["Administración de Usuarios"])
@@ -111,11 +119,79 @@ async def change_password(
 ):
     return await controller.change_password(get_database(), user_id, payload)
 
+@router.patch(
+    "/me",
+    response_model=MeResponse,
+    summary="Actualizar perfil propio",
+    description="Permite al usuario autenticado actualizar su nombre completo y/o correo.",
+)
+async def update_profile(
+    payload: UpdateProfileRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    return await controller.update_profile(get_database(), user_id, payload)
+
+
+@router.get(
+    "/preferences",
+    response_model=UserPreferencesResponse,
+    summary="Obtener preferencias de notificación",
+    description="Obtiene las preferencias de alertas del usuario autenticado.",
+)
+async def get_preferences(
+    user_id: str = Depends(get_current_user_id),
+):
+    return await controller.get_preferences(get_database(), user_id)
+
+
+@router.patch(
+    "/preferences",
+    response_model=UserPreferencesResponse,
+    summary="Actualizar preferencias de notificación",
+    description="Actualiza las preferencias de alertas del usuario autenticado.",
+)
+async def update_preferences(
+    payload: UserPreferencesRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    return await controller.update_preferences(get_database(), user_id, payload)
+
 
 
 # ---------------------------------------------------------------------------
-# /admin/*  — todos requieren rol Admin (RN-05, RN-07, RN-32)
+# /tickets/* — cualquier usuario autenticado
 # ---------------------------------------------------------------------------
+
+ticket_router = APIRouter(prefix="/tickets", tags=["Tickets de Soporte"])
+
+
+@ticket_router.post(
+    "",
+    response_model=TicketResponse,
+    status_code=201,
+    summary="Crear ticket de soporte",
+    description="Cualquier usuario autenticado puede abrir un ticket al equipo TI (Admin).",
+)
+async def create_ticket(
+    payload: TicketCreateRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    return await controller.create_ticket(get_database(), user_id, payload)
+
+
+@ticket_router.get(
+    "",
+    response_model=TicketListResponse,
+    summary="Listar mis tickets",
+    description="Lista los tickets propios del usuario autenticado.",
+)
+async def list_my_tickets(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    user_id: str = Depends(get_current_user_id),
+):
+    return await controller.list_my_tickets(get_database(), user_id, page, limit)
+
 
 @admin_router.post(
     "/users",
@@ -198,3 +274,31 @@ async def admin_get_logs(
     _=Depends(require_role(Role.ADMIN))
 ):
     return await controller.get_audit_logs(get_database(), page, limit)
+
+
+@admin_router.get(
+    "/tickets",
+    response_model=TicketListResponse,
+    summary="Listar todos los tickets de soporte",
+    description="Solo Admin puede ver todos los tickets del sistema.",
+)
+async def admin_list_tickets(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    _=Depends(require_role(Role.ADMIN)),
+):
+    return await controller.list_all_tickets(get_database(), page, limit)
+
+
+@admin_router.patch(
+    "/tickets/{ticket_id}",
+    response_model=TicketResponse,
+    summary="Actualizar estado de un ticket",
+    description="Admin marca el ticket como EN_REVISION, RESUELTO o CERRADO y puede dejar una nota.",
+)
+async def admin_update_ticket(
+    ticket_id: str,
+    payload: TicketUpdateRequest,
+    current=Depends(require_role(Role.ADMIN)),
+):
+    return await controller.update_ticket_status(get_database(), ticket_id, current.get("sub"), payload)

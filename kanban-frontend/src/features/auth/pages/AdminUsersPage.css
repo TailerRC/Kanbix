@@ -348,7 +348,7 @@
 
 .admin-users__page-btn:hover:not(:disabled) {
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   border-color: var(--color-primary, #111827);
 }
 

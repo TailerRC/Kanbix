@@ -137,7 +137,7 @@ async def admin_create_user(
 async def admin_list_users(
     page: int = Query(1, ge=1, description="Número de página (default: 1)"),
     limit: int = Query(20, ge=1, le=100, description="Resultados por página (max: 100)"),
-    _=Depends(require_role(Role.ADMIN)),
+    _=Depends(require_role(Role.MANAGER)),
 ):
     return await controller.list_users(get_database(), page, limit)
 

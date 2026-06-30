@@ -1,0 +1,313 @@
+/* ===================================================================
+   ProjectDetailPage
+   =================================================================== */
+.project-detail {
+  animation: fadeIn 0.4s ease both;
+}
+
+/* ---- Back button ---- */
+.project-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-label);
+  font-family: var(--font-sans);
+  padding: 6px 0;
+  margin-bottom: 16px;
+  transition: color var(--transition-fast);
+}
+
+.project-detail__back:hover {
+  color: var(--color-primary);
+}
+
+/* ---- Header ---- */
+.project-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.project-detail__info {
+  flex: 1;
+}
+
+.project-detail__title {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-primary);
+}
+
+.project-detail__role-badge {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  vertical-align: middle;
+  margin-left: 12px;
+}
+
+.project-detail__desc {
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  font-size: var(--fs-body);
+  max-width: 600px;
+}
+
+.project-detail__meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+}
+
+.project-detail__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.project-detail__actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ---- Members Section ---- */
+.project-detail__members {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+  margin-top: 24px;
+}
+
+.project-detail__members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.project-detail__members-header h2 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-semibold);
+}
+
+.project-detail__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.project-detail__table th {
+  text-align: left;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.project-detail__table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-bg);
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+}
+
+.project-detail__table tr:last-child td {
+  border-bottom: none;
+}
+
+.project-detail__member-name {
+  font-weight: var(--fw-medium);
+}
+
+.project-detail__member-email {
+  color: var(--color-text-muted);
+  font-size: var(--fs-label);
+}
+
+.project-detail__member-role {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+}
+
+.project-detail__remove-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.project-detail__remove-btn:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.project-detail__empty-members {
+  text-align: center;
+  padding: 32px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Skeleton ---- */
+.project-detail__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project-detail__skeleton-row {
+  height: 48px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* ---- Error ---- */
+.project-detail__error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  margin-bottom: 16px;
+}
+
+/* ---- Delete warning ---- */
+.project-detail__delete-warning {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+}
+
+.project-detail__delete-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+  outline: none;
+  text-align: center;
+  font-weight: var(--fw-bold);
+}
+
+.project-detail__delete-input:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+/* ---- Empty users ---- */
+.project-detail__empty-users {
+  text-align: center;
+  padding: 20px;
+  color: var(--color-text-muted);
+  font-size: var(--fs-label);
+}
+
+/* ---- Modal Overlay (mismo patrón que ProjectsPage) ---- */
+.project-detail__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+  animation: fadeIn 0.2s ease both;
+}
+
+.project-detail__modal {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project-detail__modal--delete {
+  border: 1.5px solid var(--color-error);
+}
+
+.project-detail__modal-title {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+}
+
+.project-detail__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.project-detail__field span {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+}
+
+.project-detail__field input,
+.project-detail__field textarea,
+.project-detail__field select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.project-detail__field input:focus,
+.project-detail__field textarea:focus,
+.project-detail__field select:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.project-detail__field textarea {
+  resize: vertical;
+}
+
+.project-detail__select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.project-detail__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}

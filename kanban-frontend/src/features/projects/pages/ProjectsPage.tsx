@@ -93,7 +93,7 @@ export default function ProjectsPage() {
             <button
               key={p.id}
               className="project-card"
-              onClick={() => navigate(`/board?project=${p.id}`)}
+              onClick={() => navigate(`/projects/${p.id}`)}
             >
               <div className="project-card__top">
                 <span className="project-card__icon">

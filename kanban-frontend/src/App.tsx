@@ -6,6 +6,7 @@ import AdminUsersPage from './features/auth/pages/AdminUsersPage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
 import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
+import ProjectDetailPage from './features/projects/pages/ProjectDetailPage';
 import BoardPage from './features/kanban/pages/BoardPage';
 import HealthCheck from './components/HealthCheck';
 
@@ -85,6 +86,7 @@ function App() {
       <Route element={<ProtectedLayout />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/board" element={<BoardPage />} />
       </Route>
 

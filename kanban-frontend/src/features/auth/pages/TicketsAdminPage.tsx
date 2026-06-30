@@ -5,6 +5,7 @@
  * El Admin puede actualizar el estado y dejar una nota de resolución.
  */
 import { useState, useEffect } from 'react';
+import { getErrorMessage } from '../../../shared/api/api';
 import {
   adminListTickets,
   adminUpdateTicket,
@@ -70,6 +71,14 @@ function UpdateModal({ ticket, onClose, onSaved }: UpdateModalProps) {
 
   const ESTADOS: EstadoTicket[] = ['ABIERTO', 'EN_REVISION', 'RESUELTO', 'CERRADO'];
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true); setError('');
@@ -78,7 +87,7 @@ function UpdateModal({ ticket, onClose, onSaved }: UpdateModalProps) {
       onSaved(updated);
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Error al actualizar el ticket.');
+      setError(getErrorMessage(err, 'Error al actualizar el ticket.'));
       setSaving(false);
     }
   };

@@ -35,7 +35,8 @@ export type IconName =
   | 'menu'
   | 'shuffle'
   | 'edit'
-  | 'power';
+  | 'power'
+  | 'trash';
 
 interface IconProps {
   name: IconName;
@@ -223,6 +224,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
       <line x1="12" y1="2" x2="12" y2="12" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M3 6h18" />
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
     </>
   ),
 };

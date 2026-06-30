@@ -151,7 +151,7 @@ export default function AdminProjectsPage() {
                             {deletingId === p.id ? (
                               '...'
                             ) : (
-                              <Icon name="logout" size={16} />
+                              <Icon name="trash" size={16} />
                             )}
                           </button>
                         </td>

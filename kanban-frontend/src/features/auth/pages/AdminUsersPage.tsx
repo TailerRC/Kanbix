@@ -9,9 +9,10 @@
  *
  * Accesible en: /admin/users (protegida por rol Admin en App.tsx)
  */
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAdminUsers } from '../hooks/useAdminUsers';
 import { getErrorMessage } from '../../../shared/api/api';
+import { useAuth } from '../../../shared/auth/AuthContext';
 import Icon from '../../../shared/components/Icon';
 import type { RolGlobal } from '../../../shared/types';
 import './AdminUsersPage.css';
@@ -56,6 +57,14 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
   const [rol, setRol]               = useState<RolGlobal>('Developer');
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -153,6 +162,7 @@ interface EditModalProps {
 }
 
 function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
+  const { user: currentUser }       = useAuth();
   const [email, setEmail]           = useState(user.email);
   const [nombre, setNombre]         = useState(user.nombre_completo);
   const [password, setPassword]     = useState('');
@@ -160,6 +170,14 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
   const [activo, setActivo]         = useState(user.activo);
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -234,7 +252,7 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
 
           <label className="admin-modal__field">
             <span>Rol global</span>
-            <select value={rol} onChange={(e) => setRol(e.target.value as RolGlobal)}>
+            <select value={rol} onChange={(e) => setRol(e.target.value as RolGlobal)} disabled={user.id === currentUser?.id}>
               <option value="Viewer">Viewer</option>
               <option value="Developer">Developer</option>
               <option value="Manager">Manager</option>
@@ -247,6 +265,7 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
               type="checkbox"
               checked={activo}
               onChange={(e) => setActivo(e.target.checked)}
+              disabled={user.id === currentUser?.id}
             />
             <span>Cuenta activa / habilitada</span>
           </label>
@@ -270,6 +289,7 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
 // --------------------------------------------------------------------------
 
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth();
   const {
     users, total, page, limit, loading, error,
     setPage, refresh, createUser, unlockUser, changeRole, updateUser,
@@ -390,6 +410,7 @@ export default function AdminUsersPage() {
                       value={u.rol_global}
                       onChange={(e) => handleRoleChange(u.id, e.target.value as RolGlobal)}
                       style={{ '--badge-color': ROL_LABELS[u.rol_global]?.color } as React.CSSProperties}
+                      disabled={u.id === currentUser?.id}
                     >
                       <option value="Viewer">Viewer</option>
                       <option value="Developer">Developer</option>
@@ -412,7 +433,8 @@ export default function AdminUsersPage() {
                       <button
                         className={`admin-users__action-btn admin-users__action-btn--power admin-users__action-btn--power-${u.activo ? 'active' : 'inactive'}`}
                         onClick={() => handleToggleActive(u.id, u.activo)}
-                        title={u.activo ? "Desactivar cuenta" : "Activar cuenta"}
+                        title={u.id === currentUser?.id ? "No podés desactivar tu propia cuenta" : (u.activo ? "Desactivar cuenta" : "Activar cuenta")}
+                        disabled={u.id === currentUser?.id}
                       >
                         <Icon name="power" size={14} />
                       </button>

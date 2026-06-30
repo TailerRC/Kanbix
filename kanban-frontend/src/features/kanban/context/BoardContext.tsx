@@ -21,7 +21,8 @@ interface BoardContextValue {
     title: string,
     priority: string,
     assignee_id?: string,
-    due_date?: string
+    due_date?: string,
+    extraFields?: Partial<TaskCard>
   ) => Promise<void>;
   updateTaskOptimistic: (taskId: string, updates: Partial<TaskCard> & { column_id?: string }) => Promise<void>;
 }
@@ -124,7 +125,10 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     title: string,
     priority: string,
     assignee_id?: string,
-    due_date?: string
+    due_date?: string,
+    // Campos extra opcionales (ej: sprint_id desde el Backlog)
+    // Retrocompatible — el Tablero no pasa este parámetro.
+    extraFields?: Partial<TaskCard>
   ) => {
     if (!board) return;
 
@@ -135,7 +139,9 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       priority: priority as any,
       status: board.columns.find((c) => c.id === columnId)?.name || '',
       due_date: due_date || null,
-      assignee: assignee_id || null, // UI mostrará ID temporalmente o lo resolverá
+      assignee: assignee_id || null,
+      // Merge de campos extra (ej: sprint_id)
+      ...extraFields,
     };
 
     setBoard((prev) => {
@@ -159,6 +165,8 @@ export function BoardProvider({ children }: { children: ReactNode }) {
         priority,
         assignee_id,
         due_date,
+        // Propagar campos extra al backend (ej: sprint_id)
+        ...extraFields,
       } as any);
       
       setBoard((prev) => {

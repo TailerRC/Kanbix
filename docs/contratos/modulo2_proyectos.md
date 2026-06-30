@@ -8,9 +8,9 @@
 
 ### POST /api/v1/projects
 
-Crea un nuevo proyecto. El usuario autenticado se convierte automáticamente en Manager del proyecto.
+Crea un nuevo proyecto. El usuario autenticado se convierte automáticamente en Manager del proyecto. (Enterprise: requiere rol global Admin o Manager — solo estos roles pueden crear proyectos.)
 
-**Auth:** Requiere token JWT (Authorization: Bearer \<access_token\>)
+**Auth:** Requiere token JWT con rol global Admin o Manager (Authorization: Bearer \<access_token\>)
 
 #### Request Body
 
@@ -33,7 +33,7 @@ Crea un nuevo proyecto. El usuario autenticado se convierte automáticamente en 
   "id": "64f3a1b2c5d6e7f8a9b0c1d2",
   "name": "Kanbix Backend",
   "description": "Proyecto para desarrollar el backend de Kanbix",
-  "owner_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "id_creador": "64f3a1b2c5d6e7f8a9b0c1d2",
   "created_at": "2026-06-21T12:00:00Z"
 }
 ```
@@ -43,6 +43,7 @@ Crea un nuevo proyecto. El usuario autenticado se convierte automáticamente en 
 | Código | Descripción |
 |--------|-------------|
 | 401 | Token de acceso requerido, inválido o expirado |
+| 403 | Solo Admin o Manager global pueden crear proyectos |
 | 422 | Datos inválidos (nombre vacío, etc.) |
 
 ---
@@ -107,7 +108,7 @@ Obtiene los detalles de un proyecto específico.
   "id": "64f3a1b2c5d6e7f8a9b0c1d2",
   "name": "Kanbix Backend",
   "description": "Proyecto para desarrollar el backend de Kanbix",
-  "owner_id": "64f3a1b2c5d6e7f8a9b0c1d2",
+  "id_creador": "64f3a1b2c5d6e7f8a9b0c1d2",
   "created_at": "2026-06-21T12:00:00Z",
   "members": [
     {

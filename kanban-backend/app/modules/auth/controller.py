@@ -1,11 +1,14 @@
 """Orquestación HTTP del módulo Auth: traduce requests en llamadas al service."""
 from app.modules.auth import service
 from app.modules.auth.schemas import (
+    AdminUpdateUserRequest,
     ChangePasswordRequest,
     ChangeRoleRequest,
     LoginRequest,
+    RegisterRequest,
     TicketCreateRequest,
     TicketUpdateRequest,
+    UpdateProfileRequest,
     UserPreferencesRequest,
 )
 

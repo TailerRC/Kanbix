@@ -12,6 +12,10 @@ kanban-frontend/dist/
 kanban-frontend/.env
 kanban-frontend/.vite/
 
+# ---------- Tooling ----------
+.atl/
+.opencode/node_modules/
+
 # ---------- Generales ----------
 .DS_Store
 .vscode/

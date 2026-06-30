@@ -1,17 +1,17 @@
 ---
 name: sdd-docs
 description: >
-  Guía obligatoria antes de codificar cualquier módulo de Kanbix.
-  Se activa cuando se va a escribir código en kanban-backend/app/modules/*
-  o kanban-frontend/src/features/*, o cuando se discute arquitectura,
-  contratos, permisos o reglas de negocio de Kanbix.
+  Fuente de verdad del proyecto Kanbix. Se activa SIEMPRE antes de crear
+  artifacts de OpenSpecs (proposal, specs, design, tasks) O antes de codificar
+  cualquier módulo en kanban-backend/app/modules/* o kanban-frontend/src/features/*,
+  o cuando se discute arquitectura, contratos, permisos o reglas de negocio.
 ---
 
-# sdd-docs — Pasos Obligatorios Antes de Codificar
+# sdd-docs — Pasos Obligatorios (Planificación + Codificación)
 
 ## Regla de Oro
 
-> **No escribas una línea de código de un módulo sin haber leído su contrato y las reglas de negocio que lo afectan.**
+> **No crees artifacts de OpenSpecs ni escribas código sin haber leído los docs del módulo.**
 
 La documentación es la fuente de verdad. Si hay duda entre el código y el doc, el doc gana.
 
@@ -19,14 +19,17 @@ La documentación es la fuente de verdad. Si hay duda entre el código y el doc,
 
 ## Pasos Obligatorios por Módulo
 
-Antes de codificar cualquier módulo, ejecutar estos pasos en orden:
+**Aplica TANTO para crear artifacts de OpenSpecs (proposal/specs/design/tasks) COMO para codificar.**
+
+Ejecutar estos pasos en orden:
 
 1. **Leer `docs/README.md`** — ubicar el contrato y los ADRs relevantes.
 2. **Leer el contrato del módulo** (`docs/contratos/moduloN_*.md`) — entender todos los endpoints, parámetros, respuestas y errores.
 3. **Leer `docs/reglas_negocio.md`** — filtrar las reglas que aplican al módulo.
 4. **Leer `docs/matriz_roles_permisos.md`** — verificar qué roles tienen acceso a cada endpoint.
-5. **Leer el ADR relevante** si la decisión técnica del módulo tiene un ADR asociado.
-6. Solo después de los pasos 1–5: empezar a codificar.
+5. **Si el módulo tiene componentes frontend**: leer `docs/diseno_visual.md` y seguir los pasos de la skill `sdd-visual-design`.
+6. **Leer el ADR relevante** si la decisión técnica del módulo tiene un ADR asociado.
+7. Solo después de los pasos 1–6: crear los artifacts de OpenSpecs o empezar a codificar.
 
 ---
 
@@ -104,5 +107,6 @@ Antes de hacer commit de código de un módulo, verificar:
 - [ ] El endpoint existe en el contrato del módulo (`docs/contratos/`)
 - [ ] Los roles y permisos coinciden con `docs/matriz_roles_permisos.md`
 - [ ] Las reglas de negocio que aplican están implementadas (ver `docs/reglas_negocio.md`)
+- [ ] **Frontend**: los componentes siguen `docs/diseno_visual.md` (paleta, tipografía, layout)
 - [ ] No hay imports directos entre módulos
 - [ ] El formato de respuesta sigue el estándar definido en `AGENTS.md` § 6

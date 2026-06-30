@@ -19,7 +19,7 @@ from app.shared.errors import APIError
 from app.shared.utils.objectid import to_object_id
 
 MAX_FAILED_ATTEMPTS = 5  # RN-04
-LOCK_MINUTES = 15  # RN-04
+LOCK_MINUTES = 15        # RN-04
 
 
 def _access_expires_seconds() -> int:
@@ -34,6 +34,36 @@ def _public_user(doc: dict) -> dict:
         "rol_global": doc["rol_global"],
         "fecha_creacion": doc["fecha_creacion"],
     }
+
+
+def _to_utc(dt: datetime | None) -> datetime | None:
+    """Garantiza que un datetime tenga tzinfo=UTC (tolerante a naive y aware)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _get_intentos(user: dict) -> int:
+    """Lee intentos fallidos tolerando nombre de campo legacy (login_attempts)."""
+    return user.get("intentos_fallidos") or user.get("login_attempts") or 0
+
+
+def _is_bloqueado(user: dict) -> bool:
+    """Detecta cuenta bloqueada tolerando campo legacy."""
+    return bool(user.get("cuenta_bloqueada") or user.get("locked_until"))
+
+
+def _get_bloqueado_hasta(user: dict) -> datetime | None:
+    """Lee fecha de bloqueo tolerando campo legacy (locked_until)."""
+    return _to_utc(user.get("bloqueado_hasta") or user.get("locked_until"))
+
+
+def _password_expirada(user: dict, now: datetime) -> bool:
+    """RN-31: verifica si la contraseña del usuario ha expirado."""
+    expiracion = _to_utc(user.get("password_expiracion"))
+    return bool(expiracion and expiracion <= now)
 
 
 async def create_user(db, payload: RegisterRequest, creador_id: str | None) -> dict:
@@ -61,54 +91,78 @@ async def create_user(db, payload: RegisterRequest, creador_id: str | None) -> d
 
 
 async def authenticate(db, email: str, password: str) -> dict:
+    """RN-04/RN-31: login con bloqueo por intentos y verificación de expiración."""
     user = await db.users.find_one({"email": email.lower()})
     if not user:
         raise APIError(401, "Credenciales inválidas")
 
+    # RN-04: cuenta desactivada por Admin
     if not user.get("activo", True):
         raise APIError(403, "Cuenta desactivada — contactar al administrador")
 
     now = datetime.now(timezone.utc)
-    bloqueado_hasta = user.get("bloqueado_hasta")
-    if user.get("cuenta_bloqueada"):
-        if bloqueado_hasta and bloqueado_hasta.replace(tzinfo=timezone.utc) > now:
+
+    # RN-04: verificar bloqueo (tolerante a campo legacy locked_until)
+    if _is_bloqueado(user):
+        bloqueado_hasta = _get_bloqueado_hasta(user)
+        if bloqueado_hasta and bloqueado_hasta > now:
             raise APIError(403, "Cuenta bloqueada por intentos fallidos — contacta al administrador")
-        # El bloqueo temporal expiró: se rehabilita automáticamente.
+        # El bloqueo temporal expiró: rehabilitar automáticamente
         await db.users.update_one(
             {"_id": user["_id"]},
-            {"$set": {"cuenta_bloqueada": False, "intentos_fallidos": 0, "bloqueado_hasta": None}},
+            {"$set": {
+                "cuenta_bloqueada": False,
+                "intentos_fallidos": 0,
+                "bloqueado_hasta": None,
+                # Limpiar también los campos legacy si existían
+                "login_attempts": 0,
+                "locked_until": None,
+            }},
         )
         user["intentos_fallidos"] = 0
 
     if not verify_password(password, user["password_hash"]):
-        intentos = user.get("intentos_fallidos", 0) + 1
-        update = {"intentos_fallidos": intentos}
+        intentos = _get_intentos(user) + 1
+        update: dict = {
+            "intentos_fallidos": intentos,
+            "login_attempts": intentos,  # mantener campo legacy sincronizado
+        }
         if intentos >= MAX_FAILED_ATTEMPTS:  # RN-04
+            bloqueo = now + timedelta(minutes=LOCK_MINUTES)
             update["cuenta_bloqueada"] = True
-            update["bloqueado_hasta"] = now + timedelta(minutes=LOCK_MINUTES)
+            update["bloqueado_hasta"] = bloqueo
+            update["locked_until"] = bloqueo  # mantener campo legacy sincronizado
         await db.users.update_one({"_id": user["_id"]}, {"$set": update})
         raise APIError(401, "Credenciales inválidas")
 
-    # Login correcto: reset de intentos y registro de acceso.
+    # Login correcto: reset de intentos y registro de acceso
     await db.users.update_one(
         {"_id": user["_id"]},
-        {"$set": {"intentos_fallidos": 0, "cuenta_bloqueada": False,
-                  "bloqueado_hasta": None, "ultimo_acceso": now}},
+        {"$set": {
+            "intentos_fallidos": 0,
+            "login_attempts": 0,
+            "cuenta_bloqueada": False,
+            "bloqueado_hasta": None,
+            "locked_until": None,
+            "ultimo_acceso": now,
+        }},
     )
 
-    expiracion = user.get("password_expiracion")
-    expirada = bool(expiracion and expiracion.replace(tzinfo=timezone.utc) <= now)
-    cambiar_password = bool(user.get("cambiar_password")) or expirada  # RN-31
+    # RN-31: forzar cambio si es primer login o password expirada
+    cambiar_password = bool(user.get("cambiar_password")) or _password_expirada(user, now)
 
     user_id = str(user["_id"])
     access = create_access_token(
-        {"sub": user_id, "role": user["rol_global"], "email": user["email"]}
+        {"sub": user_id, "role": user.get("rol_global") or user.get("rol") or "Viewer", "email": user["email"]}
     )
     refresh = create_refresh_token({"sub": user_id})
     await db.refresh_tokens.insert_one(
-        {"token": refresh, "user_id": user_id,
-         "expires_at": now + timedelta(days=settings.jwt_refresh_token_expire_days),
-         "created_at": now}
+        {
+            "token": refresh,
+            "user_id": user_id,
+            "expires_at": now + timedelta(days=settings.jwt_refresh_token_expire_days),
+            "created_at": now,
+        }
     )
 
     return {
@@ -145,18 +199,61 @@ async def logout(db, refresh_token: str) -> dict:
 
 
 async def get_me(db, user_id: str) -> dict:
+    """GET /auth/me — RN-31: incluye verificación de expiración de password."""
     user = await db.users.find_one({"_id": to_object_id(user_id, "id", "Usuario")})
     if user is None:
         raise APIError(404, "Usuario no encontrado")
+
+    now = datetime.now(timezone.utc)
+    # RN-31: el flag puede estar activo O la password puede haber expirado
+    cambiar_password = bool(user.get("cambiar_password")) or _password_expirada(user, now)
+
     return {
         "id": str(user["_id"]),
         "email": user["email"],
         "nombre_completo": user["nombre_completo"],
-        "rol_global": user["rol_global"],
-        "cambiar_password": bool(user.get("cambiar_password")),
+        "rol_global": user.get("rol_global") or user.get("rol") or "Viewer",
+        "cambiar_password": cambiar_password,
         "fecha_creacion": user["fecha_creacion"],
         "ultimo_acceso": user.get("ultimo_acceso"),
     }
+
+
+async def change_password(db, user_id: str, current_password: str, new_password: str) -> dict:
+    """RN-31: Cambiar contraseña, validar actual, y prevenir reutilización de las últimas 5 contraseñas."""
+    oid = to_object_id(user_id, "id", "Usuario")
+    user = await db.users.find_one({"_id": oid})
+    if user is None:
+        raise APIError(404, "Usuario no encontrado")
+
+    if not verify_password(current_password, user["password_hash"]):
+        raise APIError(400, "La contraseña actual es incorrecta", "current_password")
+
+    # RN-31: no reutilizar las últimas 5 contraseñas
+    ultimas = user.get("ultimas_passwords", [])
+    for old_hash in ultimas:
+        if verify_password(new_password, old_hash):
+            raise APIError(400, "No puedes reutilizar ninguna de tus últimas 5 contraseñas", "new_password")
+
+    # Hash y actualización de la lista
+    new_hash = hash_password(new_password)
+    # Agregar la nueva al principio y mantener las últimas 5
+    ultimas = [new_hash] + ultimas
+    ultimas = ultimas[:5]
+
+    now = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"_id": oid},
+        {"$set": {
+            "password_hash": new_hash,
+            "ultimas_passwords": ultimas,
+            "cambiar_password": False,
+            "password_expiracion": now + timedelta(days=90),
+        }}
+    )
+
+    await log_action(db, user_id, "cambio_password_usuario", f"Usuario cambió su propia contraseña", user_id)
+    return {"message": "Contraseña cambiada exitosamente"}
 
 
 async def list_users(db, page: int, limit: int) -> dict:
@@ -171,8 +268,9 @@ async def list_users(db, page: int, limit: int) -> dict:
             "id": str(u["_id"]),
             "email": u["email"],
             "nombre_completo": u["nombre_completo"],
-            "rol_global": u["rol_global"],
+            "rol_global": u.get("rol_global") or u.get("rol") or "Viewer",
             "activo": u.get("activo", True),
+            "bloqueado": _is_bloqueado(u),
             "fecha_creacion": u["fecha_creacion"],
             "ultimo_acceso": u.get("ultimo_acceso"),
         })
@@ -180,10 +278,17 @@ async def list_users(db, page: int, limit: int) -> dict:
 
 
 async def unlock_user(db, target_id: str) -> dict:
+    """RN-32: solo Admin puede desbloquear una cuenta."""
     oid = to_object_id(target_id, "id", "Usuario")
     result = await db.users.update_one(
         {"_id": oid},
-        {"$set": {"cuenta_bloqueada": False, "intentos_fallidos": 0, "bloqueado_hasta": None}},
+        {"$set": {
+            "cuenta_bloqueada": False,
+            "intentos_fallidos": 0,
+            "bloqueado_hasta": None,
+            "login_attempts": 0,
+            "locked_until": None,
+        }},
     )
     if result.matched_count == 0:
         raise APIError(404, "Usuario no encontrado")
@@ -191,6 +296,7 @@ async def unlock_user(db, target_id: str) -> dict:
 
 
 async def change_global_role(db, admin_id: str, target_id: str, nuevo_rol: str) -> dict:
+    """RN-07/RN-08: cambio de rol global con validaciones de seguridad."""
     if str(admin_id) == str(target_id):  # RN-07
         raise APIError(400, "No puedes cambiar tu propio rol")
 
@@ -199,8 +305,9 @@ async def change_global_role(db, admin_id: str, target_id: str, nuevo_rol: str) 
     if user is None:
         raise APIError(404, "Usuario no encontrado")
 
-    # RN-08: no dejar el sistema sin ningún Admin activo.
-    if user["rol_global"] == "Admin" and nuevo_rol != "Admin":
+    # RN-08: no dejar el sistema sin ningún Admin activo
+    current_rol = user.get("rol_global") or user.get("rol") or "Viewer"
+    if current_rol == "Admin" and nuevo_rol != "Admin":
         admins = await db.users.count_documents({"rol_global": "Admin", "activo": True})
         if admins <= 1:
             raise APIError(400, "No se puede degradar al último Admin del sistema")
@@ -210,11 +317,15 @@ async def change_global_role(db, admin_id: str, target_id: str, nuevo_rol: str) 
         db, admin_id, "cambiar_rol_global",
         f"Cambió rol global de {target_id} a {nuevo_rol}", target_id,
     )
-    return {"message": "Rol global actualizado exitosamente", "user_id": target_id, "rol_global": nuevo_rol}
+    return {
+        "message": "Rol global actualizado exitosamente",
+        "user_id": target_id,
+        "rol_global": nuevo_rol,
+    }
 
 
 async def ensure_seed_admin(db) -> None:
-    """RN-08: garantiza un Admin inicial en la primera ejecución."""
+    """RN-08: garantiza un Admin inicial en la primera ejecución del sistema."""
     if await db.users.count_documents({"rol_global": "Admin"}) > 0:
         return
     doc = model.new_user_document(

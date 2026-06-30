@@ -28,6 +28,10 @@ export type IconName =
   | 'check-circle'
   | 'square'
   | 'eye'
+  | 'eye-off'
+  | 'lock'
+  | 'unlock'
+  | 'users'
   | 'menu'
   | 'shuffle';
 
@@ -162,6 +166,33 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z" />
       <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  'eye-off': (
+    <>
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6 0 9.5 7 9.5 7a18.55 18.55 0 0 1-2.5 3.56M3 3l18 18" />
+      <path d="M2.5 12a18.55 18.55 0 0 0 3.56 2.5m4.24.25a3.12 3.12 0 0 1-.3.25c-6 0-9.5-7-9.5-7a18.55 18.55 0 0 1 2.5-3.56" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </>
+  ),
+  unlock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    </>
+  ),
+  users: (
+    <>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
   menu: (

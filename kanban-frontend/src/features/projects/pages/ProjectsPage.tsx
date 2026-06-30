@@ -217,6 +217,7 @@ export default function ProjectsPage() {
                       </thead>
                       <tbody>
                         {users.filter(u => {
+                          if (u.id === user?.id) return false;
                           const roleLower = (u.rol_global || '').toLowerCase();
                           const isAllowedRole = roleLower === 'manager' || roleLower === 'developer';
                           if (!isAllowedRole) return false;

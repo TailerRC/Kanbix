@@ -1,0 +1,98 @@
+.card-context-menu {
+  position: relative;
+}
+
+.card-context-menu__trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--color-text-light);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.card-context-menu__trigger:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.card-context-menu__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.card-context-menu__header {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.card-context-menu__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.card-context-menu__list li {
+  margin: 0;
+  padding: 0;
+}
+
+.card-context-menu__list button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.card-context-menu__list button:hover {
+  background-color: var(--color-bg-hover);
+}
+
+/* Submenu logic */
+.has-submenu {
+  position: relative;
+}
+
+.submenu-trigger {
+  justify-content: space-between;
+}
+
+.card-context-menu__submenu {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 4px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 110;
+  padding: 4px 0;
+  overflow: hidden;
+}

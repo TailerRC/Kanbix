@@ -11,9 +11,10 @@ import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
 import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
 import BoardPage from './features/kanban/pages/BoardPage';
+import BacklogPage from './features/kanban/pages/BacklogPage';
+import HealthCheck from './components/HealthCheck';
 import HelpPage from './features/support/pages/HelpPage';
 import SettingsPage from './features/support/pages/SettingsPage';
-import HealthCheck from './components/HealthCheck';
 
 // ---------------------------------------------------------------------------
 // Hook de Atajos de Teclado Operativos
@@ -179,10 +180,12 @@ function App() {
       <Route element={<ProtectedLayout />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/board" element={<BoardPage />} />
+        <Route path="/proyectos/:projectId/tablero" element={<BoardPage />} />
+        <Route path="/proyectos/:projectId/backlog" element={<BacklogPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/board" element={<Navigate to="/projects" replace />} />
       </Route>
 
       {/* Rutas exclusivas para Admin (RN-05, matriz de permisos) */}

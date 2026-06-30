@@ -4,13 +4,8 @@ import Icon from '../../../shared/components/Icon';
 import { getErrorMessage } from '../../../shared/api/api';
 import type { Project } from '../../../shared/types';
 import { createProject, listProjects } from '../api/projectsApi';
+import ProjectCard from '../components/ProjectCard';
 import './ProjectsPage.css';
-
-const ROLE_COLORS: Record<string, string> = {
-  Manager: '#6366F1',
-  Developer: '#3B82F6',
-  Viewer: '#94A3B8',
-};
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
@@ -90,33 +85,7 @@ export default function ProjectsPage() {
       {!loading && !error && projects.length > 0 && (
         <div className="projects__grid">
           {projects.map((p) => (
-            <button
-              key={p.id}
-              className="project-card"
-              onClick={() => navigate(`/board?project=${p.id}`)}
-            >
-              <div className="project-card__top">
-                <span className="project-card__icon">
-                  <Icon name="board" size={20} />
-                </span>
-                {p.role && (
-                  <span
-                    className="project-card__role"
-                    style={{ color: ROLE_COLORS[p.role], backgroundColor: `${ROLE_COLORS[p.role]}1a` }}
-                  >
-                    {p.role}
-                  </span>
-                )}
-              </div>
-              <h3 className="project-card__name">{p.name}</h3>
-              <p className="project-card__desc">{p.description || 'Sin descripción'}</p>
-              <div className="project-card__meta">
-                <span>
-                  <Icon name="dashboard" size={14} /> {p.member_count ?? 0} miembros
-                </span>
-                <span>{new Date(p.created_at).toLocaleDateString('es-PE')}</span>
-              </div>
-            </button>
+            <ProjectCard key={p.id} project={p} />
           ))}
         </div>
       )}

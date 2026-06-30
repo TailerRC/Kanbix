@@ -106,7 +106,8 @@ Obtiene un tablero con todas sus columnas y tareas.
           "title": "Implementar login",
           "assignee": "Juan Pérez",
           "priority": "Alta",
-          "due_date": "2026-06-30T18:00:00Z"
+          "due_date": "2026-06-30T18:00:00Z",
+          "sprint_id": "64f3a..."
         }
       ]
     }
@@ -283,6 +284,7 @@ Crea una nueva tarea dentro de una columna.
   "priority": "Alta",
   "assignee_id": "64f3a1b2c5d6e7f8a9b0c1d2",
   "due_date": "2026-06-30T18:00:00Z",
+  "sprint_id": "64f3a...",
   "tags": ["backend", "auth"]
 }
 ```
@@ -295,6 +297,7 @@ Crea una nueva tarea dentro de una columna.
 | priority | string | No | Baja \| Media \| Alta \| Crítica (default: Media) |
 | assignee_id | string | No | ID del usuario asignado |
 | due_date | string | No | Fecha límite en ISO 8601 UTC |
+| sprint_id | string | No | ID del sprint al que pertenece la tarea |
 | tags | array[string] | No | Etiquetas para clasificación |
 
 #### Response — 201 Created
@@ -333,6 +336,7 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 {
   "title": "Implementar login con JWT + Refresh Token",
   "priority": "Alta",
+  "sprint_id": "64f3a...",
   "description": "Incluir también la lógica de refresh token"
 }
 ```
@@ -344,6 +348,7 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 | priority | string | No | Baja \| Media \| Alta \| Crítica |
 | assignee_id | string | No | Cambiar asignado |
 | due_date | string | No | Cambiar fecha límite |
+| sprint_id | string | No | Cambiar el sprint de la tarea |
 
 #### Response — 200 OK
 

@@ -3,6 +3,7 @@
 export type RolGlobal = 'Admin' | 'Manager' | 'Developer' | 'Viewer';
 export type RolProyecto = 'Manager' | 'Developer' | 'Viewer';
 export type Prioridad = 'Baja' | 'Media' | 'Alta' | 'Crítica';
+export type TaskType = 'Tarea' | 'Recurso' | 'Contact' | 'Request';
 
 export interface User {
   id: string;
@@ -41,9 +42,18 @@ export interface Paginated<T> {
 export interface TaskCard {
   id: string;
   title: string;
+  description?: string | null;
   assignee?: string | null;
+  assignee_id?: string | null;
   priority?: Prioridad;
   due_date?: string | null;
+  start_date?: string | null;
+  story_points?: number | null;
+  tags?: string[];
+  task_type?: TaskType;
+  creator_name?: string | null;
+  status?: string;
+  sprint_id?: string | null;
 }
 
 export interface BoardColumn {
@@ -53,8 +63,26 @@ export interface BoardColumn {
   tasks: TaskCard[];
 }
 
+export interface Board {
+  id: string;
+  project_id?: string;
+  name: string;
+  description?: string;
+  column_count?: number;
+  created_at: string;
+}
+
 export interface BoardDetail {
   id: string;
   name: string;
   columns: BoardColumn[];
+}
+
+export interface Sprint {
+  id: string;
+  name: string;
+  goal?: string | null;
+  state: 'pending' | 'active' | 'completed';
+  start_date?: string | null;
+  end_date?: string | null;
 }

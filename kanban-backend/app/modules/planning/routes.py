@@ -8,6 +8,8 @@ from app.modules.planning.schemas import (
     DependencyCreate,
     PlanningUpdate,
     SubtaskCreate,
+    SprintCreate,
+    SprintUpdate,
 )
 
 router = APIRouter(tags=["Planificación"])
@@ -36,3 +38,31 @@ async def add_dependency(task_id: str, payload: DependencyCreate, current=Depend
 @router.get("/projects/{project_id}/workload")
 async def workload(project_id: str, current=Depends(get_current_user)):
     return await controller.workload(get_database(), project_id, current)
+
+
+# ----------------------------------------------------------------------------
+# Sprints
+# ----------------------------------------------------------------------------
+@router.get("/projects/{project_id}/sprints")
+async def list_sprints(project_id: str, current=Depends(get_current_user)):
+    return await controller.list_sprints(get_database(), project_id, current)
+
+
+@router.post("/projects/{project_id}/sprints", status_code=status.HTTP_201_CREATED)
+async def create_sprint(project_id: str, payload: SprintCreate, current=Depends(get_current_user)):
+    return await controller.create_sprint(get_database(), project_id, payload, current)
+
+
+@router.put("/sprints/{sprint_id}")
+async def update_sprint(sprint_id: str, payload: SprintUpdate, current=Depends(get_current_user)):
+    return await controller.update_sprint(get_database(), sprint_id, payload, current)
+
+
+@router.post("/sprints/{sprint_id}/start")
+async def start_sprint(sprint_id: str, current=Depends(get_current_user)):
+    return await controller.start_sprint(get_database(), sprint_id, current)
+
+
+@router.post("/sprints/{sprint_id}/complete")
+async def complete_sprint(sprint_id: str, current=Depends(get_current_user)):
+    return await controller.complete_sprint(get_database(), sprint_id, current)

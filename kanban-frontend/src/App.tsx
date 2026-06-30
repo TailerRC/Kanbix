@@ -1,13 +1,111 @@
-import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 import { useAuth } from './shared/auth/AuthContext';
 import LoginPage from './features/auth/pages/LoginPage';
 import AdminUsersPage from './features/auth/pages/AdminUsersPage';
+import SystemLogsPage from './features/auth/pages/SystemLogsPage';
+import TicketsAdminPage from './features/auth/pages/TicketsAdminPage';
+import ProfilePage from './features/auth/pages/ProfilePage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
 import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
+import AdminProjectsPage from './features/projects/pages/AdminProjectsPage';
 import BoardPage from './features/kanban/pages/BoardPage';
+import BacklogPage from './features/kanban/pages/BacklogPage';
 import HealthCheck from './components/HealthCheck';
+import HelpPage from './features/support/pages/HelpPage';
+import SettingsPage from './features/support/pages/SettingsPage';
+
+// ---------------------------------------------------------------------------
+// Hook de Atajos de Teclado Operativos
+// ---------------------------------------------------------------------------
+function useKeyboardShortcuts() {
+  const navigate = useNavigate();
+  const lastKeyRef = useRef<string | null>(null);
+  const timeoutRef = useRef<number | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.rol_global === 'Admin') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignorar atajos si el usuario escribe en un campo de texto
+      const tag = (e.target as HTMLElement).tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+      // 1. Atajo Búsqueda global (funciona siempre)
+      if ((e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) && !isInput) {
+        e.preventDefault();
+        const searchInput = document.getElementById('global-search') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+        return;
+      }
+
+      // 2. Escape para salir de inputs o cerrar modales/paneles
+      if (e.key === 'Escape') {
+        if (isInput) {
+          (e.target as HTMLElement).blur();
+        }
+        // Cerrar modales (simulado por evento para que modales escuchen Escape)
+        return;
+      }
+
+      if (isInput) return; // No procesar otros atajos si escribe en input
+
+      // 3. Atajos de secuencia (ej: G + D)
+      const key = e.key.toLowerCase();
+      if (lastKeyRef.current === 'g') {
+        if (key === 'd') {
+          e.preventDefault();
+          navigate('/');
+        } else if (key === 'b') {
+          e.preventDefault();
+          navigate('/board');
+        } else if (key === 'p') {
+          e.preventDefault();
+          navigate('/projects');
+        }
+        lastKeyRef.current = null;
+        return;
+      }
+
+      if (key === 'g') {
+        lastKeyRef.current = 'g';
+        if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = window.setTimeout(() => {
+          lastKeyRef.current = null;
+        }, 1000);
+        return;
+      }
+
+      // 4. Otros atajos directos
+      if (e.key === '?') {
+        e.preventDefault();
+        navigate('/help');
+      } else if (key === 'n') {
+        // Nueva tarea: si está en /board abre el modal de añadir tarea enfocado
+        if (window.location.pathname === '/board') {
+          e.preventDefault();
+          const newTaskBtn = document.getElementById('new-task-button') || document.querySelector('[class*="add-task"]') as HTMLElement;
+          if (newTaskBtn) (newTaskBtn as HTMLElement).click();
+        } else {
+          e.preventDefault();
+          navigate('/board');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    };
+  }, [navigate]);
+}
 
 // ---------------------------------------------------------------------------
 // Layout protegido base — exige sesión activa
@@ -18,6 +116,7 @@ import HealthCheck from './components/HealthCheck';
 function ProtectedLayout() {
   const { isAuthenticated, loading, mustChangePassword } = useAuth();
   const location = useLocation();
+  useKeyboardShortcuts(); // Activar atajos en vistas protegidas
 
   if (loading) {
     return <div className="app-loader">Cargando…</div>;
@@ -85,12 +184,20 @@ function App() {
       <Route element={<ProtectedLayout />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/board" element={<BoardPage />} />
+        <Route path="/proyectos/:projectId/tablero" element={<BoardPage />} />
+        <Route path="/proyectos/:projectId/backlog" element={<BacklogPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/board" element={<Navigate to="/projects" replace />} />
       </Route>
 
       {/* Rutas exclusivas para Admin (RN-05, matriz de permisos) */}
       <Route element={<AdminLayout />}>
         <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/projects" element={<AdminProjectsPage />} />
+        <Route path="/admin/logs" element={<SystemLogsPage />} />
+        <Route path="/admin/tickets" element={<TicketsAdminPage />} />
       </Route>
 
       {/* Fallback */}

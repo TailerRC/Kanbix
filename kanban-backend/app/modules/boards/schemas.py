@@ -38,6 +38,7 @@ class TaskCreate(BaseModel):
     assignee_id: Optional[str] = None
     due_date: Optional[datetime] = None
     tags: List[str] = Field(default_factory=list)
+    sprint_id: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -46,6 +47,11 @@ class TaskUpdate(BaseModel):
     priority: Optional[Prioridad] = None
     assignee_id: Optional[str] = None
     due_date: Optional[datetime] = None
+    start_date: Optional[datetime] = None
+    story_points: Optional[int] = Field(default=None, ge=0)
+    tags: Optional[List[str]] = None
+    task_type: Optional[Literal["Tarea", "Recurso", "Contact", "Request"]] = None
+    sprint_id: Optional[str] = None
 
 
 class TaskMove(BaseModel):

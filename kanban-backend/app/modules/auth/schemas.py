@@ -52,6 +52,21 @@ class ChangeRoleRequest(BaseModel):
     rol_global: RolGlobal
 
 
+class AdminUpdateUserRequest(BaseModel):
+    nombre_completo: Optional[str] = Field(None, min_length=1)
+    email: Optional[EmailStr] = None
+    activo: Optional[bool] = None
+    password: Optional[str] = None
+    rol_global: Optional[RolGlobal] = None
+
+    @field_validator("password")
+    @classmethod
+    def check_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            return _validate_password(v)
+        return v
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -143,3 +158,100 @@ class ChangeRoleResponse(BaseModel):
     message: str
     user_id: str
     rol_global: RolGlobal
+
+
+class AuditLogItem(BaseModel):
+    id: str
+    id_usuario: Optional[str] = None
+    accion: str
+    detalle: str = ""
+    id_recurso: Optional[str] = None
+    fecha: datetime
+    usuario_ejecutor_email: Optional[str] = None
+    usuario_ejecutor_nombre: Optional[str] = None
+    recurso_afectado_nombre: Optional[str] = None
+    recurso_afectado_tipo: Optional[str] = None
+
+
+class AuditLogListResponse(BaseModel):
+    total: int
+    page: int
+    limit: int
+    data: List[AuditLogItem]
+
+
+# ---------------------------------------------------------------------------
+# Perfil de Usuario (propio)
+# ---------------------------------------------------------------------------
+
+class UpdateProfileRequest(BaseModel):
+    """PATCH /auth/me — el usuario edita su propio nombre y/o correo."""
+    nombre_completo: Optional[str] = Field(None, min_length=1)
+    email: Optional[EmailStr] = None
+
+
+# ---------------------------------------------------------------------------
+# Tickets de Soporte
+# ---------------------------------------------------------------------------
+
+TipoTicket = Literal[
+    "CAMBIO_PASSWORD",
+    "ACCESO_BLOQUEADO",
+    "SOPORTE_TECNICO",
+    "OTRO",
+]
+
+EstadoTicket = Literal["ABIERTO", "EN_REVISION", "RESUELTO", "CERRADO"]
+
+
+class TicketCreateRequest(BaseModel):
+    tipo: TipoTicket
+    asunto: str = Field(min_length=3, max_length=120)
+    descripcion: str = Field(min_length=5, max_length=1000)
+
+
+class TicketUpdateRequest(BaseModel):
+    """PATCH /admin/tickets/{id} — Admin actualiza estado y nota."""
+    estado: EstadoTicket
+    nota_resolucion: Optional[str] = Field(None, max_length=500)
+
+
+class TicketResponse(BaseModel):
+    id: str
+    id_usuario: str
+    usuario_nombre: Optional[str] = None
+    usuario_email: Optional[str] = None
+    tipo: TipoTicket
+    asunto: str
+    descripcion: str
+    estado: EstadoTicket
+    nota_resolucion: Optional[str] = None
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime
+
+
+class TicketListResponse(BaseModel):
+    total: int
+    page: int
+    limit: int
+    data: List[TicketResponse]
+
+
+# ---------------------------------------------------------------------------
+# Preferencias de Notificaciones
+# ---------------------------------------------------------------------------
+
+class UserPreferencesRequest(BaseModel):
+    notif_asignacion: bool
+    notif_comentarios: bool
+    notif_email: bool
+    notif_tickets: bool
+
+
+class UserPreferencesResponse(BaseModel):
+    id_usuario: str
+    notif_asignacion: bool
+    notif_comentarios: bool
+    notif_email: bool
+    notif_tickets: bool
+

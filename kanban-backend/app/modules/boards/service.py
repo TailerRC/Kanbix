@@ -111,9 +111,17 @@ async def get_board_detail(db, project_id: str, board_id: str, current_user: dic
             tasks.append({
                 "id": str(t["_id"]),
                 "title": t["title"],
+                "description": t.get("description"),
                 "assignee": assignee_names.get(str(t.get("assignee_id"))) if t.get("assignee_id") else None,
+                "assignee_id": str(t.get("assignee_id")) if t.get("assignee_id") else None,
                 "priority": t.get("priority"),
                 "due_date": t.get("due_date"),
+                "start_date": t.get("start_date"),
+                "story_points": t.get("story_points"),
+                "tags": t.get("tags", []),
+                "task_type": t.get("task_type", "Tarea"),
+                "creator_name": assignee_names.get(str(t.get("creator_id"))) if t.get("creator_id") else None,
+                "status": t.get("status"),
             })
         columns.append({
             "id": str(col["_id"]),
@@ -263,6 +271,12 @@ async def update_task(db, task_id: str, payload: TaskUpdate, current_user: dict)
             updates["assignee_id"] = to_object_id(new_assignee, "assignee_id", "Usuario")
         else:
             updates["assignee_id"] = None
+
+    if "sprint_id" in updates:
+        if updates["sprint_id"]:
+            updates["sprint_id"] = to_object_id(updates["sprint_id"], "sprint_id", "Sprint")
+        else:
+            updates["sprint_id"] = None
 
     updates["updated_at"] = _now()
     await db.tasks.update_one({"_id": task["_id"]}, {"$set": updates})

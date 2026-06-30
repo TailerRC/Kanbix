@@ -9,7 +9,7 @@ TASKS = "tasks"
 COMMENTS = "comments"
 
 # RN-20: columnas de estado por defecto.
-DEFAULT_COLUMNS = ["Backlog", "To Do", "In Progress", "In Review", "Done"]
+DEFAULT_COLUMNS = ["To Do", "In Progress", "In Review", "Done"]
 
 
 def new_board_document(project_id: ObjectId, name: str, description: str | None) -> dict:

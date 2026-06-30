@@ -66,6 +66,12 @@ async def update_task(task_id: str, payload: TaskUpdate, current=Depends(get_cur
     return await controller.update_task(get_database(), task_id, payload, current)
 
 
+# Alias PATCH — el frontend usa PATCH para updates parciales; delega al mismo handler.
+@router.patch("/tasks/{task_id}")
+async def patch_task(task_id: str, payload: TaskUpdate, current=Depends(get_current_user)):
+    return await controller.update_task(get_database(), task_id, payload, current)
+
+
 @router.patch("/tasks/{task_id}/move")
 async def move_task(task_id: str, payload: TaskMove, current=Depends(get_current_user)):
     return await controller.move_task(get_database(), task_id, payload, current)

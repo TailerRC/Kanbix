@@ -8,12 +8,20 @@
   height: 100%;
 }
 
+/* ---- Header ---- */
 .board-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 20px;
+}
+
+.board-page__header-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
 }
 
@@ -21,12 +29,13 @@
   font-size: var(--fs-display);
   font-weight: var(--fw-bold);
   color: var(--color-text-primary);
+  margin: 0 0 2px 0;
 }
 
 .board-page__subtitle {
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: var(--fs-body);
-  margin-top: 2px;
+  margin: 0;
 }
 
 .board-page__actions {
@@ -38,8 +47,8 @@
 .board-page__add {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 18px;
+  gap: 7px;
+  padding: 8px 16px;
   background-color: var(--color-primary);
   color: #FFFFFF;
   border: none;
@@ -55,10 +64,71 @@
   background-color: var(--color-primary-hover);
 }
 
+/* ---- Tabs ---- */
+.board-page__tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 4px;
+}
+
+.board-page__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.board-page__tab:hover {
+  color: var(--color-text-primary);
+}
+
+.board-page__tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+}
+
+/* ---- Group title ---- */
+.board-page__group-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+}
+
+/* ---- Canvas ---- */
+.board-page__canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.board-page__group {
+  min-width: max-content;
+}
+
 /* ---- Columns ---- */
 .board-page__columns {
   display: flex;
-  gap: 18px;
+  gap: 16px;
   overflow-x: auto;
   padding-bottom: 12px;
   flex: 1;
@@ -66,7 +136,7 @@
 }
 
 .kcolumn {
-  flex: 0 0 290px;
+  flex: 0 0 284px;
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -80,33 +150,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .kcolumn__title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: var(--fs-h2);
+  gap: 7px;
+  font-size: 13px;
   font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
 }
 
 .kcolumn__dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .kcolumn__count {
-  font-size: var(--fs-caption);
+  font-size: 11px;
   font-weight: var(--fw-semibold);
   color: var(--color-text-muted);
   background-color: var(--color-surface);
   border-radius: var(--radius-pill);
-  padding: 1px 8px;
-  min-width: 22px;
+  padding: 1px 7px;
+  min-width: 20px;
   text-align: center;
 }
 
@@ -118,6 +188,7 @@
   display: flex;
   padding: 4px;
   border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .kcolumn__add:hover {
@@ -128,18 +199,20 @@
 .kcolumn__cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow-y: auto;
 }
 
-/* ---- Card ---- */
+/* ===================================================================
+   Task Card — mejorada
+   =================================================================== */
 .kcard {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-card);
-  padding: 14px;
+  padding: 12px 14px;
   cursor: grab;
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
@@ -149,87 +222,125 @@
   transform: translateY(-1px);
 }
 
+.kcard:active {
+  cursor: grabbing;
+}
+
+/* Top row */
 .kcard__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
+}
+
+.kcard__top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .kcard__id {
   font-family: var(--font-mono);
-  font-size: var(--fs-mono);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-muted);
+  letter-spacing: 0.03em;
 }
 
 .kcard__priority {
   font-size: 10px;
-  font-weight: var(--fw-semibold);
-  padding: 2px 8px;
+  font-weight: var(--fw-bold);
+  padding: 2px 7px;
   border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
 }
 
+/* Title */
 .kcard__title {
-  font-size: var(--fs-body);
+  font-size: 13px;
   font-weight: var(--fw-medium);
   color: var(--color-text-primary);
-  line-height: 1.4;
+  line-height: 1.45;
   margin-bottom: 10px;
 }
 
+/* Tags */
 .kcard__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 5px;
+  margin-bottom: 10px;
 }
 
 .kcard__tag {
-  font-size: var(--fs-caption);
+  font-size: 10px;
   color: var(--color-text-secondary);
   background-color: var(--color-bg);
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
 }
 
+/* Footer */
 .kcard__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
 }
 
+/* Avatar con iniciales */
 .kcard__avatar {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-light));
+  background: linear-gradient(135deg, var(--color-brand, #6366F1), var(--color-brand-light, #818CF8));
   color: #FFFFFF;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: var(--fw-bold);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  cursor: default;
 }
 
+/* Meta: fecha + puntos */
 .kcard__meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
+/* Fecha pill — neutral */
 .kcard__due {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: var(--fs-caption);
+  gap: 3px;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
   color: var(--color-text-muted);
+  background: var(--color-bg);
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+/* Fecha vencida — rojo */
+.kcard__due--overdue {
+  color: #DC2626;
+  background: #FEF2F2;
+  border-color: #FECACA;
 }
 
 .kcard__points {
-  font-size: var(--fs-caption);
+  font-size: 10px;
   font-weight: var(--fw-semibold);
   color: var(--color-text-secondary);
   background-color: var(--color-bg);
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
 }

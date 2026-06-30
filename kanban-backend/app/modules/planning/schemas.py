@@ -26,3 +26,18 @@ class SubtaskCreate(BaseModel):
 
 class DependencyCreate(BaseModel):
     depends_on_task_id: str
+
+
+# ---------- Sprints ----------
+class SprintCreate(BaseModel):
+    name: str = Field(min_length=1)
+    goal: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+
+class SprintUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    goal: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None

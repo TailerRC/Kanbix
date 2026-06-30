@@ -13,10 +13,12 @@ from app.core.security import (
     verify_password,
 )
 from app.modules.auth import model
-from app.modules.auth.schemas import RegisterRequest
+from app.modules.auth.schemas import RegisterRequest, AdminUpdateUserRequest
 from app.shared.audit import log_action
+from app.shared.email import send_email_via_resend
 from app.shared.errors import APIError
 from app.shared.utils.objectid import to_object_id
+import asyncio
 
 MAX_FAILED_ATTEMPTS = 5  # RN-04
 LOCK_MINUTES = 15        # RN-04
@@ -87,6 +89,42 @@ async def create_user(db, payload: RegisterRequest, creador_id: str | None) -> d
         f"Creó usuario {payload.email} con rol {payload.rol_global}",
         str(result.inserted_id),
     )
+
+    # Correo de bienvenida
+    email_html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="color: #4f46e5; margin-top: 0;">¡Bienvenido a Kanbix, {payload.nombre_completo}!</h2>
+        <p>Se ha creado tu cuenta en el sistema de gestión ágil <strong>Kanbix</strong>.</p>
+        <p>A continuación se detallan tus credenciales de acceso:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+            <tr>
+                <td style="padding: 8px 0; font-weight: bold; width: 120px;">Email:</td>
+                <td style="padding: 8px 0; color: #1f2937;">{payload.email}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; font-weight: bold;">Contraseña:</td>
+                <td style="padding: 8px 0; color: #1f2937;"><code>{payload.password}</code></td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; font-weight: bold;">Rol Global:</td>
+                <td style="padding: 8px 0; color: #1f2937;">{payload.rol_global}</td>
+            </tr>
+        </table>
+        <p style="background: #fef3c7; color: #92400e; padding: 10px; border-radius: 6px; font-size: 14px;">
+            ⚠️ <strong>Nota:</strong> Deberás cambiar tu contraseña al iniciar sesión por primera vez (RN-31).
+        </p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #6b7280; text-align: center;">El Equipo de Kanbix</p>
+    </div>
+    """
+    asyncio.create_task(
+        send_email_via_resend(
+            to_email=payload.email,
+            subject="Bienvenido a Kanbix - Tus credenciales",
+            html_content=email_html
+        )
+    )
+
     return _public_user(doc)
 
 
@@ -315,13 +353,242 @@ async def change_global_role(db, admin_id: str, target_id: str, nuevo_rol: str) 
     await db.users.update_one({"_id": oid}, {"$set": {"rol_global": nuevo_rol}})
     await log_action(
         db, admin_id, "cambiar_rol_global",
-        f"Cambió rol global de {target_id} a {nuevo_rol}", target_id,
+        f"Cambió rol global de {user.get('email')} a {nuevo_rol}", target_id,
     )
     return {
         "message": "Rol global actualizado exitosamente",
         "user_id": target_id,
         "rol_global": nuevo_rol,
     }
+
+
+async def update_user_by_admin(db, admin_id: str, target_id: str, payload: AdminUpdateUserRequest) -> dict:
+    """Actualiza la información de un usuario por parte de un administrador con validaciones (RN-02, RN-07, RN-08, RN-31, RN-33)."""
+    target_oid = to_object_id(target_id, "id", "Usuario")
+    user = await db.users.find_one({"_id": target_oid})
+    if user is None:
+        raise APIError(404, "Usuario no encontrado")
+
+    updates = {}
+    audit_changes = []
+
+    # 1. Validar y actualizar nombre completo
+    if payload.nombre_completo is not None:
+        if payload.nombre_completo != user.get("nombre_completo"):
+            updates["nombre_completo"] = payload.nombre_completo
+            audit_changes.append(f"nombre a '{payload.nombre_completo}'")
+
+    # 2. Validar y actualizar email (RN-02)
+    if payload.email is not None:
+        new_email = payload.email.lower()
+        if new_email != user.get("email"):
+            existing = await db.users.find_one({"email": new_email})
+            if existing:
+                raise APIError(400, "El email ya está registrado", "email")
+            updates["email"] = new_email
+            audit_changes.append(f"email a '{new_email}'")
+
+    # 3. Validar y actualizar estado activo (RN-08)
+    if payload.activo is not None:
+        new_activo = payload.activo
+        if new_activo != user.get("activo", True):
+            if not new_activo:
+                # Si se desactiva, verificar que no sea el mismo admin
+                if str(admin_id) == str(target_id):
+                    raise APIError(400, "No puedes desactivarte a ti mismo")
+                
+                # Verificar si es el último Admin activo del sistema
+                current_rol = user.get("rol_global") or user.get("rol") or "Viewer"
+                if current_rol == "Admin":
+                    admins = await db.users.count_documents({"rol_global": "Admin", "activo": True})
+                    if admins <= 1:
+                        raise APIError(400, "No se puede desactivar al último Admin activo del sistema")
+            
+            updates["activo"] = new_activo
+            state_str = "activo" if new_activo else "inactivo"
+            audit_changes.append(f"estado a '{state_str}'")
+
+    # 4. Validar y actualizar contraseña (RN-31)
+    if payload.password is not None:
+        new_hash = hash_password(payload.password)
+        updates["password_hash"] = new_hash
+        updates["cambiar_password"] = True
+        updates["intentos_fallidos"] = 0
+        updates["cuenta_bloqueada"] = False
+        updates["bloqueado_hasta"] = None
+        updates["login_attempts"] = 0
+        updates["locked_until"] = None
+        
+        # Opcionalmente actualizar la lista de últimas contraseñas si el admin lo cambia
+        ultimas = user.get("ultimas_passwords", [])
+        ultimas = [new_hash] + ultimas
+        updates["ultimas_passwords"] = ultimas[:5]
+        
+        audit_changes.append("contraseña cambiada")
+
+    # 5. Validar y actualizar rol global (RN-07, RN-08)
+    if payload.rol_global is not None:
+        nuevo_rol = payload.rol_global
+        current_rol = user.get("rol_global") or user.get("rol") or "Viewer"
+        if nuevo_rol != current_rol:
+            if str(admin_id) == str(target_id):
+                raise APIError(400, "No puedes cambiar tu propio rol")
+            
+            # RN-08: no degradar al último Admin activo
+            if current_rol == "Admin" and nuevo_rol != "Admin":
+                admins = await db.users.count_documents({"rol_global": "Admin", "activo": True})
+                if admins <= 1:
+                    raise APIError(400, "No se puede degradar al último Admin del sistema")
+
+            updates["rol_global"] = nuevo_rol
+            audit_changes.append(f"rol a '{nuevo_rol}'")
+
+    # Si hay actualizaciones, aplicarlas
+    if updates:
+        await db.users.update_one({"_id": target_oid}, {"$set": updates})
+        
+        # Loguear acción de auditoría
+        changes_desc = ", ".join(audit_changes)
+        await log_action(
+            db, admin_id, "actualizar_usuario_admin",
+            f"Admin actualizó usuario {user.get('email')} -> {changes_desc}",
+            str(target_oid)
+        )
+        
+        # Mezclar los cambios en el objeto original para retornar
+        for k, v in updates.items():
+            user[k] = v
+
+    # Retornar el usuario actualizado en el formato esperado
+    return {
+        "id": str(target_oid),
+        "email": user["email"],
+        "nombre_completo": user["nombre_completo"],
+        "rol_global": user.get("rol_global") or user.get("rol") or "Viewer",
+        "activo": user.get("activo", True),
+        "bloqueado": _is_bloqueado(user),
+        "fecha_creacion": user["fecha_creacion"],
+        "ultimo_acceso": user.get("ultimo_acceso"),
+    }
+
+
+async def list_audit_logs(db, page: int, limit: int) -> dict:
+    """Obtiene la bitácora de auditoría de forma paginada, ordenada por fecha descendente (RN-33)
+
+    y resolviendo nombres/correos de forma masiva (batch query).
+    """
+    from bson import ObjectId
+
+    limit = max(1, min(limit, 100))
+    page = max(1, page)
+    skip = (page - 1) * limit
+    total = await db.audit_logs.count_documents({})
+    cursor = db.audit_logs.find({}).sort("fecha", -1).skip(skip).limit(limit)
+    data = []
+
+    # 1. Cargar lista básica
+    async for log in cursor:
+        data.append({
+            "id": str(log["_id"]),
+            "id_usuario": log.get("id_usuario"),
+            "accion": log.get("accion"),
+            "detalle": log.get("detalle", ""),
+            "id_recurso": log.get("id_recurso"),
+            "fecha": log.get("fecha"),
+        })
+
+    # 2. Recolectar IDs únicos
+    user_ids = set()
+    project_ids = set()
+
+    for log in data:
+        uid = log.get("id_usuario")
+        if uid and uid != "system":
+            user_ids.add(uid)
+
+        rid = log.get("id_recurso")
+        if rid:
+            action = (log.get("accion") or "").lower()
+            if "proyecto" in action:
+                project_ids.add(rid)
+            else:
+                user_ids.add(rid)
+
+    # 3. Validar ObjectIds
+    user_oids = []
+    for uid in user_ids:
+        try:
+            user_oids.append(ObjectId(uid))
+        except Exception:
+            pass
+
+    project_oids = []
+    for pid in project_ids:
+        try:
+            project_oids.append(ObjectId(pid))
+        except Exception:
+            pass
+
+    # 4. Realizar consultas en batch
+    user_map = {}
+    if user_oids:
+        users = await db.users.find(
+            {"_id": {"$in": user_oids}},
+            {"email": 1, "nombre_completo": 1}
+        ).to_list(length=len(user_oids))
+        for u in users:
+            user_map[str(u["_id"])] = {
+                "email": u.get("email"),
+                "nombre_completo": u.get("nombre_completo")
+            }
+
+    project_map = {}
+    if project_oids:
+        projects = await db.projects.find(
+            {"_id": {"$in": project_oids}},
+            {"name": 1}
+        ).to_list(length=len(project_oids))
+        for p in projects:
+            project_map[str(p["_id"])] = {
+                "name": p.get("name")
+            }
+
+    # 5. Mapear datos enriquecidos
+    for log in data:
+        uid = log.get("id_usuario")
+        rid = log.get("id_recurso")
+        action = (log.get("accion") or "").lower()
+
+        # Ejecutor
+        if uid == "system":
+            log["usuario_ejecutor_email"] = None
+            log["usuario_ejecutor_nombre"] = "Sistema"
+        elif uid and uid in user_map:
+            log["usuario_ejecutor_email"] = user_map[uid]["email"]
+            log["usuario_ejecutor_nombre"] = user_map[uid]["nombre_completo"]
+        else:
+            log["usuario_ejecutor_email"] = None
+            log["usuario_ejecutor_nombre"] = None
+
+        # Recurso afectado
+        log["recurso_afectado_nombre"] = None
+        log["recurso_afectado_tipo"] = None
+
+        if rid:
+            if "proyecto" in action:
+                if rid in project_map:
+                    log["recurso_afectado_nombre"] = project_map[rid]["name"]
+                    log["recurso_afectado_tipo"] = "proyecto"
+            else:
+                if rid in user_map:
+                    log["recurso_afectado_nombre"] = user_map[rid]["email"]
+                    log["recurso_afectado_tipo"] = "usuario"
+                # Fallback cruzado
+                elif rid in project_map:
+                    log["recurso_afectado_nombre"] = project_map[rid]["name"]
+                    log["recurso_afectado_tipo"] = "proyecto"
+
+    return {"total": total, "page": page, "limit": limit, "data": data}
 
 
 async def ensure_seed_admin(db) -> None:
@@ -337,3 +604,238 @@ async def ensure_seed_admin(db) -> None:
     )
     await db.users.insert_one(doc)
     print("[SEED] Admin inicial creado: admin@kanbix.com / Admin123 (cambiar en primer login)")
+
+
+# ---------------------------------------------------------------------------
+# Perfil propio — PATCH /auth/me
+# ---------------------------------------------------------------------------
+
+async def update_profile(db, user_id: str, nombre_completo: str | None, email: str | None) -> dict:
+    """Permite al usuario autenticado actualizar su nombre y/o correo."""
+    oid = to_object_id(user_id)
+    user = await db.users.find_one({"_id": oid})
+    if not user:
+        raise APIError(404, "Usuario no encontrado")
+
+    updates: dict = {}
+    if nombre_completo is not None:
+        updates["nombre_completo"] = nombre_completo.strip()
+    if email is not None:
+        email_lower = email.strip().lower()
+        if email_lower != user["email"]:
+            existing = await db.users.find_one({"email": email_lower})
+            if existing:
+                raise APIError(400, "El correo ya está registrado por otro usuario")
+        updates["email"] = email_lower
+
+    if not updates:
+        raise APIError(400, "No se proporcionaron campos para actualizar")
+
+    await db.users.update_one({"_id": oid}, {"$set": updates})
+    updated = await db.users.find_one({"_id": oid})
+
+    # Audit log
+    cambios = []
+    if "nombre_completo" in updates:
+        cambios.append(f"nombre a '{updates['nombre_completo']}'")
+    if "email" in updates:
+        cambios.append(f"email a '{updates['email']}'")
+    await log_action(
+        db,
+        id_usuario=user_id,
+        accion="ACTUALIZAR_PERFIL",
+        detalle=f"Usuario actualizó su perfil: {', '.join(cambios)}",
+        id_recurso=user_id,
+    )
+
+    return {
+        "id": str(updated["_id"]),
+        "email": updated["email"],
+        "nombre_completo": updated["nombre_completo"],
+        "rol_global": updated["rol_global"],
+        "cambiar_password": updated.get("cambiar_password", False),
+        "fecha_creacion": updated["fecha_creacion"],
+        "ultimo_acceso": updated.get("ultimo_acceso"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tickets de Soporte
+# ---------------------------------------------------------------------------
+
+def _ticket_to_dict(doc: dict, usuario: dict | None = None) -> dict:
+    return {
+        "id": str(doc["_id"]),
+        "id_usuario": str(doc["id_usuario"]),
+        "usuario_nombre": usuario.get("nombre_completo") if usuario else None,
+        "usuario_email": usuario.get("email") if usuario else None,
+        "tipo": doc["tipo"],
+        "asunto": doc["asunto"],
+        "descripcion": doc["descripcion"],
+        "estado": doc["estado"],
+        "nota_resolucion": doc.get("nota_resolucion"),
+        "fecha_creacion": doc["fecha_creacion"],
+        "fecha_actualizacion": doc["fecha_actualizacion"],
+    }
+
+
+async def create_ticket(db, user_id: str, tipo: str, asunto: str, descripcion: str) -> dict:
+    """Crea un ticket de soporte para el usuario autenticado."""
+    oid = to_object_id(user_id)
+    user = await db.users.find_one({"_id": oid})
+    if not user:
+        raise APIError(404, "Usuario no encontrado")
+
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id_usuario": user_id,
+        "tipo": tipo,
+        "asunto": asunto.strip(),
+        "descripcion": descripcion.strip(),
+        "estado": "ABIERTO",
+        "nota_resolucion": None,
+        "fecha_creacion": now,
+        "fecha_actualizacion": now,
+    }
+    result = await db.tickets.insert_one(doc)
+    doc["_id"] = result.inserted_id
+
+    # Notificar al Admin por email
+    admin = await db.users.find_one({"rol_global": "Admin", "activo": True})
+    if admin:
+        asyncio.create_task(send_email_via_resend(
+            to_email=admin["email"],
+            subject=f"[Kanbix] Nuevo ticket de soporte: {asunto}",
+            html_content=(
+                f"<h2>Nuevo Ticket de Soporte</h2>"
+                f"<p><strong>De:</strong> {user['nombre_completo']} ({user['email']})</p>"
+                f"<p><strong>Tipo:</strong> {tipo}</p>"
+                f"<p><strong>Asunto:</strong> {asunto}</p>"
+                f"<p><strong>Descripción:</strong><br>{descripcion}</p>"
+                f"<hr><p>Revísalo en la sección <em>Tickets de Atención</em> del panel Admin.</p>"
+            )
+        ))
+
+    return _ticket_to_dict(doc, user)
+
+
+async def list_my_tickets(db, user_id: str, page: int = 1, limit: int = 20) -> dict:
+    """Lista los tickets del usuario autenticado (paginado)."""
+    skip = (page - 1) * limit
+    cursor = db.tickets.find({"id_usuario": user_id}).sort("fecha_creacion", -1).skip(skip).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    total = await db.tickets.count_documents({"id_usuario": user_id})
+
+    # Obtener datos del propio usuario
+    oid = to_object_id(user_id)
+    user = await db.users.find_one({"_id": oid})
+
+    data = [_ticket_to_dict(d, user) for d in docs]
+    return {"total": total, "page": page, "limit": limit, "data": data}
+
+
+async def list_all_tickets(db, page: int = 1, limit: int = 50) -> dict:
+    """Lista todos los tickets del sistema para el Admin (paginado, más recientes primero)."""
+    skip = (page - 1) * limit
+    cursor = db.tickets.find().sort("fecha_creacion", -1).skip(skip).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    total = await db.tickets.count_documents({})
+
+    # Resolver usuarios en batch
+    user_ids = list({d["id_usuario"] for d in docs})
+    user_oids = [to_object_id(uid) for uid in user_ids if uid]
+    users_cursor = db.users.find({"_id": {"$in": user_oids}}, {"nombre_completo": 1, "email": 1})
+    users_list = await users_cursor.to_list(length=len(user_oids))
+    user_map = {str(u["_id"]): u for u in users_list}
+
+    data = [_ticket_to_dict(d, user_map.get(d["id_usuario"])) for d in docs]
+    return {"total": total, "page": page, "limit": limit, "data": data}
+
+
+async def update_ticket_status(db, ticket_id: str, admin_id: str, estado: str, nota_resolucion: str | None) -> dict:
+    """Admin actualiza el estado de un ticket y opcionalmente deja una nota."""
+    oid = to_object_id(ticket_id)
+    ticket = await db.tickets.find_one({"_id": oid})
+    if not ticket:
+        raise APIError(404, "Ticket no encontrado")
+
+    now = datetime.now(timezone.utc)
+    await db.tickets.update_one(
+        {"_id": oid},
+        {"$set": {
+            "estado": estado,
+            "nota_resolucion": nota_resolucion,
+            "fecha_actualizacion": now,
+        }},
+    )
+    updated = await db.tickets.find_one({"_id": oid})
+
+    # Resolver usuario solicitante
+    uid = updated["id_usuario"]
+    user_oid = to_object_id(uid)
+    user = await db.users.find_one({"_id": user_oid})
+
+    # Notificar al usuario por email si hay cambio a RESUELTO o CERRADO
+    if estado in ("RESUELTO", "CERRADO") and user:
+        asyncio.create_task(send_email_via_resend(
+            to_email=user["email"],
+            subject=f"[Kanbix] Tu ticket fue {estado.lower()}: {updated['asunto']}",
+            html_content=(
+                f"<h2>Actualización de Ticket</h2>"
+                f"<p>Hola <strong>{user['nombre_completo']}</strong>,</p>"
+                f"<p>Tu ticket <em>{updated['asunto']}</em> ha sido marcado como <strong>{estado}</strong>.</p>"
+                + (f"<p><strong>Nota del equipo TI:</strong><br>{nota_resolucion}</p>" if nota_resolucion else "")
+                + "<hr><p>Gracias por usar Kanbix.</p>"
+            )
+        ))
+
+    return _ticket_to_dict(updated, user)
+
+
+# Preferencias de Notificación
+async def get_user_preferences(db, user_id: str) -> dict:
+    """Obtiene las preferencias de notificación de un usuario, creándolas por defecto si no existen."""
+    pref = await db.user_preferences.find_one({"id_usuario": user_id})
+    if not pref:
+        # Valores por defecto: todo activo
+        pref = {
+            "id_usuario": user_id,
+            "notif_asignacion": True,
+            "notif_comentarios": True,
+            "notif_email": True,
+            "notif_tickets": True,
+        }
+        await db.user_preferences.insert_one(pref.copy())
+    
+    # Retornar los campos requeridos mapeados
+    return {
+        "id_usuario": str(pref["id_usuario"]),
+        "notif_asignacion": bool(pref["notif_asignacion"]),
+        "notif_comentarios": bool(pref["notif_comentarios"]),
+        "notif_email": bool(pref["notif_email"]),
+        "notif_tickets": bool(pref["notif_tickets"]),
+    }
+
+
+async def update_user_preferences(db, user_id: str, payload) -> dict:
+    """Crea o actualiza las preferencias de notificación de un usuario."""
+    now = datetime.now(timezone.utc)
+    update_data = {
+        "notif_asignacion": payload.notif_asignacion,
+        "notif_comentarios": payload.notif_comentarios,
+        "notif_email": payload.notif_email,
+        "notif_tickets": payload.notif_tickets,
+        "fecha_actualizacion": now
+    }
+    
+    await db.user_preferences.update_one(
+        {"id_usuario": user_id},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return {
+        "id_usuario": user_id,
+        **update_data
+    }
+

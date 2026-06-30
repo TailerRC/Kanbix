@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
 
     # Email
-    sendgrid_api_key: str = ""
-    sendgrid_from_email: str = "noreply@kanbix.com"
+    resend_api_key: str = ""
+    resend_from_email: str = "onboarding@resend.dev"
 
     class Config:
         env_file = ".env"

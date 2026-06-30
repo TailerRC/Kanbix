@@ -1,6 +1,6 @@
 # Módulo 4: Planificación y Asignaciones
 
-> Asignación de fechas límite, estimaciones, subtareas, dependencias entre tareas y consulta de carga de trabajo del equipo.
+> Gestión de Sprints, asignación de fechas límite, estimaciones, subtareas, dependencias entre tareas y consulta de carga de trabajo del equipo.
 
 ---
 
@@ -204,6 +204,51 @@ Retorna un consolidado de los Story Points totales asignados a cada miembro del 
 |--------|-------------|
 | 401 | Token de acceso requerido, inválido o expirado |
 | 404 | Proyecto no encontrado |
+
+---
+
+### Sprints
+
+#### GET /api/v1/projects/{project_id}/sprints
+Lista todos los sprints de un proyecto.
+
+**Auth:** Requiere token JWT
+
+**Response — 200 OK**
+```json
+[
+  {
+    "id": "64f3a...",
+    "name": "Sprint 1",
+    "goal": "Completar auth",
+    "state": "pending",
+    "start_date": null,
+    "end_date": null
+  }
+]
+```
+
+#### POST /api/v1/projects/{project_id}/sprints
+Crea un sprint en estado `pending`.
+
+**Request Body**
+```json
+{
+  "name": "Sprint 1",
+  "goal": "Opcional",
+  "start_date": "2026-06-30T10:00:00Z",
+  "end_date": "2026-07-15T10:00:00Z"
+}
+```
+
+#### PUT /api/v1/sprints/{sprint_id}
+Actualiza campos de un sprint.
+
+#### POST /api/v1/sprints/{sprint_id}/start
+Inicia el sprint. Falla si ya hay otro sprint `active`.
+
+#### POST /api/v1/sprints/{sprint_id}/complete
+Completa el sprint (estado `completed`).
 
 ---
 

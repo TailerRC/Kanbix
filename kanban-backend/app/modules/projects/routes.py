@@ -31,9 +31,9 @@ async def create_project(payload: ProjectCreate, current=Depends(require_role(Ro
 async def list_projects(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    user_id: str = Depends(get_current_user_id),
+    current=Depends(get_current_user),
 ):
-    return await controller.list_(get_database(), user_id, page, limit)
+    return await controller.list_(get_database(), current, page, limit)
 
 
 @router.get("/{project_id}", response_model=ProjectDetailResponse)

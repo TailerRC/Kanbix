@@ -4,6 +4,8 @@ from app.modules.planning.schemas import (
     DependencyCreate,
     PlanningUpdate,
     SubtaskCreate,
+    SprintCreate,
+    SprintUpdate,
 )
 
 
@@ -25,3 +27,26 @@ async def add_dependency(db, task_id, payload: DependencyCreate, current):
 
 async def workload(db, project_id, current):
     return await service.get_workload(db, project_id, current)
+
+
+# ----------------------------------------------------------------------------
+# Sprints
+# ----------------------------------------------------------------------------
+async def list_sprints(db, project_id, current):
+    return await service.list_sprints(db, project_id, current)
+
+
+async def create_sprint(db, project_id, payload: SprintCreate, current):
+    return await service.create_sprint(db, project_id, payload, current)
+
+
+async def update_sprint(db, sprint_id, payload: SprintUpdate, current):
+    return await service.update_sprint(db, sprint_id, payload, current)
+
+
+async def start_sprint(db, sprint_id, current):
+    return await service.start_sprint(db, sprint_id, current)
+
+
+async def complete_sprint(db, sprint_id, current):
+    return await service.complete_sprint(db, sprint_id, current)

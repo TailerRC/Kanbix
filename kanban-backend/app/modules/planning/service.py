@@ -11,6 +11,8 @@ from app.modules.planning.schemas import (
     DependencyCreate,
     PlanningUpdate,
     SubtaskCreate,
+    SprintCreate,
+    SprintUpdate,
 )
 from app.shared.authz import ensure_project_access
 from app.shared.errors import APIError
@@ -136,3 +138,113 @@ async def get_workload(db, project_id: str, current_user: dict) -> list[dict]:
             "total_story_points": row["total_story_points"],
         })
     return result
+
+
+# ----------------------------------------------------------------------------
+# Sprints
+# ----------------------------------------------------------------------------
+async def list_sprints(db, project_id: str, current_user: dict) -> list[dict]:
+    oid = to_object_id(project_id, "project_id", "Proyecto")
+    await ensure_project_access(db, oid, current_user, "Viewer")
+
+    sprints = []
+    async for s in db.sprints.find({"project_id": oid}).sort("created_at", 1):
+        sprints.append({
+            "id": str(s["_id"]),
+            "name": s["name"],
+            "goal": s.get("goal"),
+            "state": s["state"],
+            "start_date": s.get("start_date"),
+            "end_date": s.get("end_date"),
+        })
+    return sprints
+
+
+async def create_sprint(db, project_id: str, payload: SprintCreate, current_user: dict) -> dict:
+    oid = to_object_id(project_id, "project_id", "Proyecto")
+    await ensure_project_access(db, oid, current_user, "Manager")
+
+    doc = model.new_sprint_document(oid, payload.name, payload.goal, payload.start_date, payload.end_date)
+    result = await db.sprints.insert_one(doc)
+    return {
+        "id": str(result.inserted_id),
+        "name": doc["name"],
+        "goal": doc["goal"],
+        "state": doc["state"],
+        "start_date": doc["start_date"],
+        "end_date": doc["end_date"],
+    }
+
+
+async def update_sprint(db, sprint_id: str, payload: SprintUpdate, current_user: dict) -> dict:
+    oid = to_object_id(sprint_id, "sprint_id", "Sprint")
+    sprint = await db.sprints.find_one({"_id": oid})
+    if sprint is None:
+        raise APIError(404, "Sprint no encontrado", "sprint_id")
+    
+    await ensure_project_access(db, sprint["project_id"], current_user, "Manager")
+
+    updates = payload.model_dump(exclude_unset=True)
+    if updates:
+        updates["updated_at"] = datetime.now(timezone.utc)
+        await db.sprints.update_one({"_id": oid}, {"$set": updates})
+        sprint.update(updates)
+    
+    return {
+        "id": str(sprint["_id"]),
+        "name": sprint["name"],
+        "goal": sprint.get("goal"),
+        "state": sprint["state"],
+        "start_date": sprint.get("start_date"),
+        "end_date": sprint.get("end_date"),
+    }
+
+
+async def start_sprint(db, sprint_id: str, current_user: dict) -> dict:
+    oid = to_object_id(sprint_id, "sprint_id", "Sprint")
+    sprint = await db.sprints.find_one({"_id": oid})
+    if sprint is None:
+        raise APIError(404, "Sprint no encontrado", "sprint_id")
+    
+    await ensure_project_access(db, sprint["project_id"], current_user, "Manager")
+
+    if sprint["state"] != "pending":
+        raise APIError(400, "Solo se pueden iniciar sprints pendientes", "state")
+
+    # Verificar si hay otro sprint activo en el proyecto
+    active = await db.sprints.find_one({"project_id": sprint["project_id"], "state": "active"})
+    if active:
+        raise APIError(400, "Ya existe un sprint activo en el proyecto", "state")
+
+    now = datetime.now(timezone.utc)
+    updates = {"state": "active", "updated_at": now}
+    if not sprint.get("start_date"):
+        updates["start_date"] = now
+
+    await db.sprints.update_one({"_id": oid}, {"$set": updates})
+    sprint.update(updates)
+    return {
+        "id": str(sprint["_id"]),
+        "state": sprint["state"],
+        "start_date": sprint.get("start_date"),
+    }
+
+
+async def complete_sprint(db, sprint_id: str, current_user: dict) -> dict:
+    oid = to_object_id(sprint_id, "sprint_id", "Sprint")
+    sprint = await db.sprints.find_one({"_id": oid})
+    if sprint is None:
+        raise APIError(404, "Sprint no encontrado", "sprint_id")
+    
+    await ensure_project_access(db, sprint["project_id"], current_user, "Manager")
+
+    if sprint["state"] != "active":
+        raise APIError(400, "Solo se pueden completar sprints activos", "state")
+
+    now = datetime.now(timezone.utc)
+    await db.sprints.update_one({"_id": oid}, {"$set": {"state": "completed", "updated_at": now}})
+    
+    return {
+        "id": str(sprint["_id"]),
+        "state": "completed",
+    }

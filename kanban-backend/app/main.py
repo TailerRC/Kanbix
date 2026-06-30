@@ -77,6 +77,7 @@ async def root():
 
 
 @app.get("/health")
+@app.get(f"{API_PREFIX}/health")
 async def health_check():
     return {"status": "ok"}
 
@@ -84,6 +85,7 @@ async def health_check():
 # --- Routers de los módulos ---
 app.include_router(auth_routes.router, prefix=API_PREFIX)          # Módulo 1: /auth
 app.include_router(auth_routes.admin_router, prefix=API_PREFIX)    # Módulo 1: /admin
+app.include_router(auth_routes.ticket_router, prefix=API_PREFIX)   # Módulo 1: /tickets
 app.include_router(projects_routes.router, prefix=API_PREFIX)      # Módulo 2: /projects
 app.include_router(boards_routes.router, prefix=API_PREFIX)        # Módulo 3
 app.include_router(planning_routes.router, prefix=API_PREFIX)      # Módulo 4

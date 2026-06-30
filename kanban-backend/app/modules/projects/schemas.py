@@ -7,9 +7,15 @@ from pydantic import BaseModel, Field
 RolProyecto = Literal["Manager", "Developer", "Viewer"]
 
 
+class MemberCreateInput(BaseModel):
+    user_id: str
+    rol: RolProyecto
+
+
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=3)
     description: Optional[str] = None
+    members: Optional[List[MemberCreateInput]] = None
 
 
 class ProjectUpdate(BaseModel):

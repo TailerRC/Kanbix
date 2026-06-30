@@ -85,6 +85,7 @@ async def health_check():
 app.include_router(auth_routes.router, prefix=API_PREFIX)          # Módulo 1: /auth
 app.include_router(auth_routes.admin_router, prefix=API_PREFIX)    # Módulo 1: /admin
 app.include_router(projects_routes.router, prefix=API_PREFIX)      # Módulo 2: /projects
+app.include_router(projects_routes.invitations_router, prefix=API_PREFIX) # Módulo 2: /invitations
 app.include_router(boards_routes.router, prefix=API_PREFIX)        # Módulo 3
 app.include_router(planning_routes.router, prefix=API_PREFIX)      # Módulo 4
 app.include_router(notifications_routes.router, prefix=API_PREFIX) # Módulo 5: /notifications

@@ -250,3 +250,103 @@
   gap: 12px;
   margin-top: 4px;
 }
+
+/* ---- Buscador ---- */
+.projects__search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 320px;
+}
+
+.projects__search-input {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+  outline: none;
+  background-color: var(--color-surface);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.projects__search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.projects__search-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+/* ---- Invitaciones Recibidas Banner ---- */
+.projects__invitations-banner {
+  background-color: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+  animation: fadeIn var(--transition-base);
+}
+
+.projects__invitations-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3730A3;
+  margin-bottom: 12px;
+}
+
+.projects__invitations-header h3 {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+}
+
+.projects__invitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.projects__invitation-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  flex-wrap: wrap;
+}
+
+.projects__invitation-info p {
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+}
+
+.projects__invitation-exp {
+  display: block;
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.projects__invitation-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---- Estructura de Modal Grid ---- */
+.projects__modal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+

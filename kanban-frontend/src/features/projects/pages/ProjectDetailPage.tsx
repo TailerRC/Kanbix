@@ -1,72 +1,110 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../../../shared/components/Icon';
 import { getErrorMessage } from '../../../shared/api/api';
 import { useAuth } from '../../../shared/auth/AuthContext';
-import type { Project, User, RolProyecto } from '../../../shared/types';
+import type { Project, RolProyecto, Sprint, User, ProjectMember } from '../../../shared/types';
 import {
   getProject,
   updateProject,
   deleteProject,
-  addMember,
+  inviteMember,
   removeMember,
+  changeMemberRole,
+  createSprint,
+  listSprints,
+  closeSprint,
   listUsers,
+  listMembers,
 } from '../api/projectsApi';
 import './ProjectDetailPage.css';
 
 const ROLE_COLORS: Record<string, string> = {
-  Manager: '#6366F1',
-  Developer: '#3B82F6',
-  Viewer: '#94A3B8',
+  scrum_master: '#6366F1', // Manager / Violeta Kanbix
+  developer: '#3B82F6',    // Developer / Azul
+  product_owner: '#D97706', // Viewer / Ámbar
 };
-
-type MemberModal = 'none' | 'edit' | 'delete' | 'add-member';
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Estados del proyecto
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Modal state
-  const [modal, setModal] = useState<MemberModal>('none');
+  // Modales
+  const [modal, setModal] = useState<'none' | 'edit' | 'delete' | 'add-member' | 'create-sprint'>('none');
 
-  // Edit modal fields
+  // Campos de edición de proyecto
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editColor, setEditColor] = useState('#1E3A5F');
+  const [editEstado, setEditEstado] = useState('Activo');
   const [editError, setEditError] = useState('');
   const [editing, setEditing] = useState(false);
 
-  // Delete modal fields
+  // Campos de eliminación de proyecto
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  // Add member modal fields
-  const [usersList, setUsersList] = useState<User[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [usersError, setUsersError] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedRol, setSelectedRol] = useState<RolProyecto>('Developer');
+  // Campos de invitación de miembro
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [selectedRol, setSelectedRol] = useState<RolProyecto>('developer');
   const [addError, setAddError] = useState('');
   const [adding, setAdding] = useState(false);
 
-  // Helpers
-  const projectRole = project?.members?.find((m) => m.user_id === user?.id)?.rol;
+  // Dropdown de usuarios registrados (TI Enterprise)
+  const [usersList, setUsersList] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
 
-  const canManage =
-    user?.rol_global === 'Admin' || projectRole === 'Manager';
+  // Sprints
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [sprintsLoading, setSprintsLoading] = useState(false);
+  const [sprintName, setSprintName] = useState('');
+  const [sprintStart, setSprintStart] = useState('');
+  const [sprintEnd, setSprintEnd] = useState('');
+  const [sprintError, setSprintError] = useState('');
+  const [sprintSaving, setSprintSaving] = useState(false);
+
+  // Miembros del equipo
+  const [members, setMembers] = useState<ProjectMember[]>([]);
+
+  // Helpers
+  const userGlobalRol = user?.rol_global;
+  const projectRole = members.find((m) => m.id_usuario === user?.id)?.rol;
+  const canManage = userGlobalRol === 'Admin' || projectRole === 'scrum_master';
 
   const load = () => {
     if (!id) return;
     setLoading(true);
     getProject(id)
-      .then(setProject)
+      .then((data) => {
+        setProject(data);
+        // Cargar miembros del proyecto (Endpoint 9)
+        return listMembers(id);
+      })
+      .then((res) => {
+        setMembers(res.miembros);
+        // Cargar sprints del proyecto
+        loadSprintsList();
+      })
       .catch((err) => setError(getErrorMessage(err, 'No se pudo cargar el proyecto')))
       .finally(() => setLoading(false));
+  };
+
+  const loadSprintsList = () => {
+    if (!id) return;
+    setSprintsLoading(true);
+    listSprints(id)
+      .then((res) => setSprints(res.sprints))
+      .catch((err) => console.error('Error al cargar sprints:', err))
+      .finally(() => setSprintsLoading(false));
   };
 
   useEffect(load, [id]);
@@ -74,8 +112,10 @@ export default function ProjectDetailPage() {
   // ---- Edit handlers ----
   const openEdit = () => {
     if (!project) return;
-    setEditName(project.name);
-    setEditDesc(project.description ?? '');
+    setEditName(project.nombre);
+    setEditDesc(project.descripcion ?? '');
+    setEditColor(project.color);
+    setEditEstado(project.estado);
     setEditError('');
     setModal('edit');
   };
@@ -86,11 +126,13 @@ export default function ProjectDetailPage() {
     setEditError('');
     setEditing(true);
     try {
-      const updated = await updateProject(id, {
-        name: editName.trim(),
-        description: editDesc.trim() || undefined,
+      const res = await updateProject(id, {
+        nombre: editName.trim(),
+        descripcion: editDesc.trim() || undefined,
+        color: editColor,
+        estado: editEstado,
       });
-      setProject(updated);
+      setProject(res.proyecto);
       setModal('none');
     } catch (err) {
       setEditError(getErrorMessage(err, 'No se pudo actualizar el proyecto'));
@@ -113,11 +155,11 @@ export default function ProjectDetailPage() {
     }
   };
 
-  // ---- Add member handlers ----
+  // ---- Invitation handlers ----
   const openAddMember = async () => {
     setAddError('');
-    setSelectedUserId('');
-    setSelectedRol('Developer');
+    setInviteEmail('');
+    setSelectedRol('developer');
     setModal('add-member');
 
     setUsersLoading(true);
@@ -125,9 +167,11 @@ export default function ProjectDetailPage() {
     try {
       const users = await listUsers();
       setUsersList(users);
-      if (users.length > 0) setSelectedUserId(users[0].id);
+      if (users.length > 0) {
+        setInviteEmail(users[0].email);
+      }
     } catch (err) {
-      setUsersError(getErrorMessage(err, 'No se pudieron cargar los usuarios'));
+      setUsersError(getErrorMessage(err, 'No se pudieron cargar los usuarios registrados'));
     } finally {
       setUsersLoading(false);
     }
@@ -135,24 +179,25 @@ export default function ProjectDetailPage() {
 
   const handleAddMember = async (e: FormEvent) => {
     e.preventDefault();
-    if (!id || !selectedUserId) return;
+    if (!id || !inviteEmail.trim()) return;
     setAddError('');
     setAdding(true);
     try {
-      await addMember(id, selectedUserId, selectedRol);
+      await inviteMember(id, inviteEmail.trim(), selectedRol);
       setModal('none');
+      alert('¡Invitación enviada de forma exitosa por email!');
       load();
     } catch (err) {
-      setAddError(getErrorMessage(err, 'No se pudo agregar el miembro'));
+      setAddError(getErrorMessage(err, 'No se pudo enviar la invitación'));
     } finally {
       setAdding(false);
     }
   };
 
-  const handleRemoveMember = (userId: string, name: string) => {
+  const handleRemoveMember = (memberId: string, name: string) => {
     if (!id) return;
     if (!window.confirm(`¿Eliminar a "${name}" del proyecto?`)) return;
-    removeMember(id, userId)
+    removeMember(id, memberId)
       .then(() => load())
       .catch((err) => {
         alert(getErrorMessage(err, 'No se pudo eliminar al miembro'));
@@ -160,32 +205,86 @@ export default function ProjectDetailPage() {
       });
   };
 
+  const handleChangeRole = async (memberId: string, rol: RolProyecto) => {
+    if (!id) return;
+    try {
+      await changeMemberRole(id, memberId, rol);
+      load();
+    } catch (err) {
+      alert(getErrorMessage(err, 'No se pudo actualizar el rol del miembro'));
+    }
+  };
+
+  // ---- Sprint handlers ----
+  const openCreateSprint = () => {
+    setSprintError('');
+    setSprintName('');
+    const today = new Date().toISOString().split('T')[0];
+    setSprintStart(today);
+    // Por defecto una semana
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    setSprintEnd(nextWeek.toISOString().split('T')[0]);
+    setModal('create-sprint');
+  };
+
+  const handleCreateSprint = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!id || !sprintName.trim()) return;
+    setSprintError('');
+    setSprintSaving(true);
+    try {
+      await createSprint(id, {
+        nombre: sprintName.trim(),
+        fecha_inicio: sprintStart,
+        fecha_fin: sprintEnd,
+      });
+      setModal('none');
+      loadSprintsList();
+    } catch (err) {
+      setSprintError(getErrorMessage(err, 'No se pudo crear el sprint'));
+    } finally {
+      setSprintSaving(false);
+    }
+  };
+
+  const handleCloseSprint = async (sprintId: string, name: string) => {
+    if (!id) return;
+    if (!window.confirm(`¿Estás seguro de cerrar el "${name}"? Las tareas inconpletas volverán automáticamente al backlog.`)) return;
+    try {
+      const res = await closeSprint(id, sprintId);
+      alert(`Sprint cerrado exitosamente.\n- Tareas completadas: ${res.tareas_completadas}\n- Tareas devueltas al backlog: ${res.tareas_al_backlog}`);
+      loadSprintsList();
+    } catch (err) {
+      alert(getErrorMessage(err, 'No se pudo cerrar el sprint'));
+    }
+  };
+
   // ---- Loading skeleton ----
   if (loading) {
     return (
-      <div className="project-detail">
-        <div className="project-detail__skeleton">
-          <div className="project-detail__skeleton-row" style={{ width: '40%' }} />
-          <div className="project-detail__skeleton-row" style={{ width: '70%' }} />
-          <div className="project-detail__skeleton-row" style={{ width: '55%' }} />
+      <div className="project-detail project-detail--loading">
+        <div className="project-detail__spinner"></div>
+        <p>Cargando detalles del proyecto…</p>
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="project-detail project-detail--error">
+        <div className="project-detail__error-card">
+          <Icon name="board" size={48} style={{ color: 'var(--color-error)' }} />
+          <div className="project-detail__error-text">{error || 'Proyecto no encontrado'}</div>
+          <button className="btn btn--outline" onClick={() => navigate('/projects')}>
+            Volver a proyectos
+          </button>
         </div>
       </div>
     );
   }
 
-  // ---- Error state ----
-  if (error || !project) {
-    return (
-      <div className="project-detail">
-        <div className="project-detail__error">{error || 'Proyecto no encontrado'}</div>
-        <button className="btn btn--outline" onClick={() => navigate('/projects')}>
-          Volver a proyectos
-        </button>
-      </div>
-    );
-  }
-
-  const memberCount = project.members?.length ?? project.member_count ?? 0;
+  const memberCount = members.length;
 
   return (
     <div className="project-detail">
@@ -196,10 +295,13 @@ export default function ProjectDetailPage() {
       </button>
 
       {/* Header */}
-      <div className="project-detail__header">
+      <div className="project-detail__header" style={{ borderLeft: `8px solid ${project.color}` }}>
         <div className="project-detail__info">
           <h1 className="project-detail__title">
-            {project.name}
+            <span className="project-detail__avatar" style={{ backgroundColor: project.color }}>
+              {project.iniciales}
+            </span>
+            {project.nombre}
             {projectRole && (
               <span
                 className="project-detail__role-badge"
@@ -213,127 +315,236 @@ export default function ProjectDetailPage() {
             )}
           </h1>
           <p className="project-detail__desc">
-            {project.description || 'Sin descripción'}
+            {project.descripcion || 'Sin descripción'}
           </p>
           <div className="project-detail__meta">
             <span>
-              <Icon name="board" size={14} /> Creado el {new Date(project.created_at).toLocaleDateString('es-PE')}
+              <Icon name="board" size={14} /> Fecha inicio: {project.fecha_inicio}
             </span>
+            {project.fecha_fin && (
+              <span>
+                <Icon name="board" size={14} /> Fecha fin: {project.fecha_fin}
+              </span>
+            )}
             <span>
               <Icon name="users" size={14} /> {memberCount} miembro{memberCount !== 1 ? 's' : ''}
             </span>
+            <span>
+              Estado: <strong style={{ color: project.estado === 'Activo' ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>{project.estado}</strong>
+            </span>
           </div>
         </div>
 
-        {canManage && (
-          <div className="project-detail__actions">
-            <button className="btn btn--outline" onClick={openEdit}>
-              <Icon name="settings" size={16} /> Editar
-            </button>
-            <button
-              className="btn btn--outline"
-              onClick={() => { setDeleteConfirm(''); setModal('delete'); }}
-              style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
-            >
-              Eliminar
-            </button>
-          </div>
-        )}
+        <div className="project-detail__actions-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
+          <button className="btn btn--primary" onClick={() => navigate(`/board?project=${project.id}`)}>
+            <Icon name="board" size={16} /> Ver Tablero Kanban
+          </button>
+          {canManage && (
+            <div className="project-detail__actions">
+              <button className="btn btn--outline" onClick={openEdit}>
+                <Icon name="settings" size={16} /> Editar
+              </button>
+              <button
+                className="btn btn--outline"
+                onClick={() => { setDeleteConfirm(''); setModal('delete'); }}
+                style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
+              >
+                Archivar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Members Section */}
-      <div className="project-detail__members">
-        <div className="project-detail__members-header">
-          <h2>Miembros ({memberCount})</h2>
-          {canManage && (
-            <button className="btn btn--primary btn--small" onClick={openAddMember}>
-              <Icon name="plus" size={15} /> Agregar miembro
-            </button>
+      <div className="project-detail__sections-grid">
+        {/* Members Section */}
+        <div className="project-detail__card project-detail__members">
+          <div className="project-detail__card-header">
+            <h2>Miembros del Equipo ({memberCount})</h2>
+            {canManage && (
+              <button className="btn btn--primary btn--small" onClick={openAddMember}>
+                <Icon name="plus" size={15} /> Invitar miembro
+              </button>
+            )}
+          </div>
+
+          {!members || members.length === 0 ? (
+            <div className="project-detail__empty">
+              No hay miembros asignados a este proyecto.
+            </div>
+          ) : (
+            <table className="project-detail__table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  {canManage && <th>Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id_usuario}>
+                    <td className="project-detail__member-name">{m.nombre}</td>
+                    <td className="project-detail__member-email">{m.email}</td>
+                    <td>
+                      {canManage && m.id_usuario !== project.id_creador ? (
+                        <select
+                          className="project-detail__member-select-role"
+                          value={m.rol}
+                          onChange={(e) => handleChangeRole(m.id_usuario, e.target.value as RolProyecto)}
+                          style={{
+                            color: ROLE_COLORS[m.rol],
+                            backgroundColor: `${ROLE_COLORS[m.rol]}1a`,
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-pill)',
+                            padding: '2px 8px',
+                            fontWeight: 'var(--fw-semibold)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="scrum_master">scrum_master</option>
+                          <option value="product_owner">product_owner</option>
+                          <option value="developer">developer</option>
+                        </select>
+                      ) : (
+                        <span
+                          className="project-detail__member-role"
+                          style={{
+                            color: ROLE_COLORS[m.rol],
+                            backgroundColor: `${ROLE_COLORS[m.rol]}1a`,
+                          }}
+                        >
+                          {m.rol}
+                        </span>
+                      )}
+                    </td>
+                    {canManage && (
+                      <td>
+                        {m.id_usuario !== project.id_creador ? (
+                          <button
+                            className="project-detail__remove-btn"
+                            title="Eliminar miembro"
+                            onClick={() => handleRemoveMember(m.id_usuario, m.nombre)}
+                          >
+                            ✕
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '0.85em', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>Creador</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
-        {!project.members || project.members.length === 0 ? (
-          <div className="project-detail__empty-members">
-            No hay miembros en este proyecto.
+        {/* Sprints Section */}
+        <div className="project-detail__card project-detail__sprints">
+          <div className="project-detail__card-header">
+            <h2>Sprints del Proyecto</h2>
+            {canManage && (
+              <button className="btn btn--primary btn--small" onClick={openCreateSprint}>
+                <Icon name="plus" size={15} /> Iniciar Sprint
+              </button>
+            )}
           </div>
-        ) : (
-          <table className="project-detail__table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                {canManage && <th>Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {project.members.map((m) => (
-                <tr key={m.user_id}>
-                  <td className="project-detail__member-name">{m.nombre_completo}</td>
-                  <td className="project-detail__member-email">{m.email}</td>
-                  <td>
-                    <span
-                      className="project-detail__member-role"
-                      style={{
-                        color: ROLE_COLORS[m.rol],
-                        backgroundColor: `${ROLE_COLORS[m.rol]}1a`,
-                      }}
-                    >
-                      {m.rol}
-                    </span>
-                  </td>
-                  {canManage && (
-                    <td>
-                      <button
-                        className="project-detail__remove-btn"
-                        title="Eliminar miembro"
-                        onClick={() => handleRemoveMember(m.user_id, m.nombre_completo)}
+
+          {sprintsLoading ? (
+            <div className="project-detail__empty">Cargando sprints…</div>
+          ) : sprints.length === 0 ? (
+            <div className="project-detail__empty">
+              No hay sprints creados en este proyecto.
+            </div>
+          ) : (
+            <div className="project-detail__sprints-list">
+              {sprints.map((s) => (
+                <div key={s.id} className="project-detail__sprint-item">
+                  <div className="project-detail__sprint-info">
+                    <h3 className="project-detail__sprint-title">
+                      {s.nombre}
+                      <span
+                        className={`project-detail__sprint-status project-detail__sprint-status--${s.estado.toLowerCase()}`}
                       >
-                        ✕
-                      </button>
-                    </td>
+                        {s.estado}
+                      </span>
+                    </h3>
+                    <p className="project-detail__sprint-dates">
+                      <Icon name="board" size={12} /> {s.fecha_inicio} al {s.fecha_fin}
+                    </p>
+                  </div>
+                  {canManage && s.estado === 'Activo' && (
+                    <button
+                      className="btn btn--outline btn--small"
+                      style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
+                      onClick={() => handleCloseSprint(s.id, s.nombre)}
+                    >
+                      Cerrar Sprint
+                    </button>
                   )}
-                </tr>
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ============ MODAL: Edit Project ============ */}
-      {modal === 'edit' && (
+      {modal === 'edit' && createPortal(
         <div className="project-detail__overlay" onClick={() => setModal('none')}>
           <form
             className="project-detail__modal"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleEdit}
           >
-            <h2 className="project-detail__modal-title">Editar proyecto</h2>
+            <h2 className="project-detail__modal-title">Editar Proyecto</h2>
             {editError && <div className="project-detail__error">{editError}</div>}
 
             <label className="project-detail__field">
-              <span>Nombre</span>
+              <span>Nombre del Proyecto</span>
               <input
+                type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Nombre del proyecto"
-                minLength={3}
                 required
               />
             </label>
 
             <label className="project-detail__field">
-              <span>Descripción (opcional)</span>
+              <span>Descripción</span>
               <textarea
                 value={editDesc}
                 onChange={(e) => setEditDesc(e.target.value)}
-                placeholder="¿De qué trata el proyecto?"
                 rows={3}
               />
             </label>
 
+            <label className="project-detail__field">
+              <span>Color Identificador</span>
+              <input
+                type="color"
+                value={editColor}
+                onChange={(e) => setEditColor(e.target.value)}
+                style={{ padding: '0px', height: '40px', cursor: 'pointer' }}
+              />
+            </label>
+
+            <label className="project-detail__field">
+              <span>Estado</span>
+              <select value={editEstado} onChange={(e) => setEditEstado(e.target.value)}>
+                <option value="Activo">Activo</option>
+                <option value="Pausado">Pausado</option>
+              </select>
+            </label>
+
             <div className="project-detail__modal-actions">
-              <button type="button" className="btn btn--outline" onClick={() => setModal('none')}>
+              <button
+                type="button"
+                className="btn btn--outline"
+                onClick={() => setModal('none')}
+              >
                 Cancelar
               </button>
               <button type="submit" className="btn btn--primary" disabled={editing}>
@@ -341,92 +552,91 @@ export default function ProjectDetailPage() {
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ============ MODAL: Delete Project ============ */}
-      {modal === 'delete' && (
-        <div className="project-detail__overlay" onClick={() => { setModal('none'); setDeleteError(''); }}>
+      {/* ============ MODAL: Archivar/Eliminar Project ============ */}
+      {modal === 'delete' && createPortal(
+        <div className="project-detail__overlay" onClick={() => setModal('none')}>
           <div
-            className="project-detail__modal project-detail__modal--delete"
+            className="project-detail__modal project-detail__modal--danger"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="project-detail__modal-title">Eliminar proyecto</h2>
+            <h2 className="project-detail__modal-title" style={{ color: 'var(--color-error)' }}>
+              Archivar Proyecto
+            </h2>
+            <p>
+              Esta acción marcará el proyecto <strong>{project.nombre}</strong> como{' '}
+              <strong>Archivado</strong>. Dejará de listarse en la plataforma.
+            </p>
+            <p>
+              Por favor escribe <strong>ELIMINAR</strong> para confirmar.
+            </p>
+
             {deleteError && <div className="project-detail__error">{deleteError}</div>}
 
-            <div className="project-detail__delete-warning">
-              Esta acción eliminará el proyecto y todos sus tableros, tareas y sprints
-              de forma permanente. No se puede deshacer.
-            </div>
-
-            <label className="project-detail__field">
-              <span>
-                Escribe <strong>ELIMINAR</strong> para confirmar
-              </span>
-              <input
-                className="project-detail__delete-input"
-                value={deleteConfirm}
-                onChange={(e) => setDeleteConfirm(e.target.value)}
-                placeholder="ELIMINAR"
-              />
-            </label>
+            <input
+              type="text"
+              className="project-detail__confirm-input"
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="Escribe ELIMINAR"
+            />
 
             <div className="project-detail__modal-actions">
               <button
                 type="button"
                 className="btn btn--outline"
-                onClick={() => { setModal('none'); setDeleteError(''); }}
+                onClick={() => setModal('none')}
               >
                 Cancelar
               </button>
               <button
-                type="button"
-                className="btn"
+                className="btn btn--primary"
+                style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
                 disabled={deleteConfirm !== 'ELIMINAR' || deleting}
                 onClick={handleDelete}
-                style={{
-                  backgroundColor: 'var(--color-error)',
-                  color: '#FFFFFF',
-                  opacity: deleteConfirm !== 'ELIMINAR' ? 0.5 : 1,
-                }}
               >
-                {deleting ? 'Eliminando…' : 'Eliminar proyecto'}
+                {deleting ? 'Archivando…' : 'Archivar proyecto'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ============ MODAL: Add Member ============ */}
-      {modal === 'add-member' && (
+      {/* ============ MODAL: Invitar Miembro ============ */}
+      {modal === 'add-member' && createPortal(
         <div className="project-detail__overlay" onClick={() => setModal('none')}>
           <form
             className="project-detail__modal"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleAddMember}
           >
-            <h2 className="project-detail__modal-title">Agregar miembro</h2>
+            <h2 className="project-detail__modal-title">Invitar Miembro al Equipo</h2>
             {addError && <div className="project-detail__error">{addError}</div>}
 
             <label className="project-detail__field">
-              <span>Usuario</span>
+              <span>Colaborador a invitar</span>
               {usersLoading ? (
-                <div className="project-detail__empty-users">Cargando usuarios…</div>
+                <div className="project-detail__empty-users">Cargando colaboradores…</div>
               ) : usersError ? (
                 <div className="project-detail__error">{usersError}</div>
               ) : usersList.length === 0 ? (
                 <div className="project-detail__empty-users">
-                  No hay usuarios disponibles
+                  No hay usuarios pre-registrados en el sistema
                 </div>
               ) : (
                 <select
                   className="project-detail__select"
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
                   required
                 >
+                  <option value="">Selecciona un colaborador</option>
                   {usersList.map((u) => (
-                    <option key={u.id} value={u.id}>
+                    <option key={u.id} value={u.email}>
                       {u.nombre_completo} ({u.email})
                     </option>
                   ))}
@@ -435,16 +645,16 @@ export default function ProjectDetailPage() {
             </label>
 
             <label className="project-detail__field">
-              <span>Rol</span>
+              <span>Rol en el Proyecto</span>
               <select
                 className="project-detail__select"
                 value={selectedRol}
                 onChange={(e) => setSelectedRol(e.target.value as RolProyecto)}
                 required
               >
-                <option value="Manager">Manager</option>
-                <option value="Developer">Developer</option>
-                <option value="Viewer">Viewer</option>
+                <option value="developer">developer</option>
+                <option value="product_owner">product_owner</option>
+                <option value="scrum_master">scrum_master</option>
               </select>
             </label>
 
@@ -459,13 +669,77 @@ export default function ProjectDetailPage() {
               <button
                 type="submit"
                 className="btn btn--primary"
-                disabled={adding || usersLoading || !!usersError || usersList.length === 0}
+                disabled={adding || usersLoading || !!usersError || usersList.length === 0 || !inviteEmail}
               >
-                {adding ? 'Agregando…' : 'Agregar'}
+                {adding ? 'Enviando invitación…' : 'Enviar Invitación'}
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ============ MODAL: Iniciar Sprint ============ */}
+      {modal === 'create-sprint' && createPortal(
+        <div className="project-detail__overlay" onClick={() => setModal('none')}>
+          <form
+            className="project-detail__modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleCreateSprint}
+          >
+            <h2 className="project-detail__modal-title">Iniciar Nuevo Sprint</h2>
+            {sprintError && <div className="project-detail__error">{sprintError}</div>}
+
+            <label className="project-detail__field">
+              <span>Nombre del Sprint</span>
+              <input
+                type="text"
+                value={sprintName}
+                onChange={(e) => setSprintName(e.target.value)}
+                placeholder="ej. Sprint 1 - Core MVP"
+                required
+              />
+            </label>
+
+            <label className="project-detail__field">
+              <span>Fecha de Inicio</span>
+              <input
+                type="date"
+                value={sprintStart}
+                onChange={(e) => setSprintStart(e.target.value)}
+                required
+              />
+            </label>
+
+            <label className="project-detail__field">
+              <span>Fecha de Fin</span>
+              <input
+                type="date"
+                value={sprintEnd}
+                onChange={(e) => setSprintEnd(e.target.value)}
+                required
+              />
+            </label>
+
+            <div className="project-detail__modal-actions">
+              <button
+                type="button"
+                className="btn btn--outline"
+                onClick={() => setModal('none')}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={sprintSaving || !sprintName.trim()}
+              >
+                {sprintSaving ? 'Iniciando…' : 'Iniciar Sprint'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
       )}
     </div>
   );

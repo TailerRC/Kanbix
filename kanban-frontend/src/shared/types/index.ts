@@ -1,7 +1,7 @@
 /** Tipos compartidos del dominio Kanbix (alineados con los contratos del backend). */
 
 export type RolGlobal = 'Admin' | 'Manager' | 'Developer' | 'Viewer';
-export type RolProyecto = 'Manager' | 'Developer' | 'Viewer';
+export type RolProyecto = 'scrum_master' | 'product_owner' | 'developer';
 export type Prioridad = 'Baja' | 'Media' | 'Alta' | 'Crítica';
 
 export interface User {
@@ -15,20 +15,46 @@ export interface User {
 }
 
 export interface ProjectMember {
-  user_id: string;
-  nombre_completo: string;
+  id_miembro: string;
+  id_usuario: string;
+  nombre: string;
   email: string;
   rol: RolProyecto;
+  fecha_union?: string;
 }
 
 export interface Project {
   id: string;
-  name: string;
-  description?: string | null;
-  role?: RolProyecto;
-  member_count?: number;
-  created_at: string;
+  nombre: string;
+  descripcion?: string | null;
+  iniciales: string;
+  color: string;
+  estado: string;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  id_creador: string;
+  mi_rol?: RolProyecto;
+  total_miembros?: number;
+  fecha_creacion: string;
   members?: ProjectMember[];
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  rol: RolProyecto;
+  estado: 'pendiente' | 'aceptada' | 'rechazada' | 'expirada';
+  id_proyecto: string;
+  expira_en: string;
+}
+
+export interface Sprint {
+  id: string;
+  nombre: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  estado: 'Activo' | 'Cerrado';
+  id_proyecto: string;
 }
 
 export interface Paginated<T> {
@@ -41,9 +67,15 @@ export interface Paginated<T> {
 export interface TaskCard {
   id: string;
   title: string;
+  description?: string | null;
   assignee?: string | null;
+  assignee_id?: string | null;
   priority?: Prioridad;
   due_date?: string | null;
+  story_points?: number | null;
+  subtasks?: { subtask_id: string; title: string; completed: boolean }[];
+  dependencies?: string[];
+  tags?: string[];
 }
 
 export interface BoardColumn {

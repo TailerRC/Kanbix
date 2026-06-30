@@ -25,7 +25,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const handleLogout = async () => {
     await logout();
@@ -71,6 +71,17 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       <nav className="sidebar__nav">{menuItems.map(renderItem)}</nav>
 
       <div className="sidebar__divider" />
+
+      {/* Administración (solo para Admin) */}
+      {user?.rol_global === 'Admin' && (
+        <>
+          <div className="sidebar__section-label">Administración</div>
+          <nav className="sidebar__nav">
+            {renderItem({ to: '/admin/users', label: 'Usuarios', icon: 'users' })}
+          </nav>
+          <div className="sidebar__divider" />
+        </>
+      )}
 
       {/* Support section */}
       <div className="sidebar__section-label">Soporte</div>

@@ -12,6 +12,68 @@ Sistema Kanban colaborativo con gestión de proyectos, tableros drag & drop, tar
 | Auth | JWT + Refresh Token |
 | Tiempo real | WebSockets |
 
+## Cómo Ejecutar el Proyecto
+
+### Opción rápida (recomendada)
+
+Ejecutar `setup.bat` en la raíz del proyecto. El script verifica las dependencias, instala lo que falte y levanta ambos servidores en ventanas separadas.
+
+```cmd
+.\setup.bat
+```
+
+### Opción manual — Backend (FastAPI + MongoDB)
+
+```bash
+cd kanban-backend
+
+# Crear y activar entorno virtual (primera vez)
+python -m venv .venv
+.venv\Scripts\activate    # Windows
+source .venv/bin/activate # Linux/Mac
+
+# Instalar dependencias (primera vez)
+pip install -r requirements.txt
+
+# Configurar variables de entorno
+# Copiar .env.example a .env y completar:
+#   MONGO_URI: conexión a MongoDB Atlas
+#   JWT_SECRET_KEY: clave secreta para JWT
+
+# Iniciar servidor
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+El servidor queda en `http://localhost:8000` — Docs: `http://localhost:8000/docs`
+
+### Opción manual — Frontend (React + Vite + TypeScript)
+
+```bash
+cd kanban-frontend
+
+# Instalar dependencias (primera vez)
+npm install
+
+# Configurar variables de entorno (opcional)
+# Crear .env con VITE_API_URL si se necesita apuntar a otro backend
+
+# Iniciar servidor
+npm run dev
+```
+
+El servidor queda en `http://localhost:5173`
+
+### Ambos servidores juntos (sin setup.bat)
+
+Para desarrollo, ejecutar **backend y frontend en terminales separadas**:
+
+| Terminal | Comando |
+|----------|---------|
+| 1 (Backend) | `cd kanban-backend && python -m uvicorn app.main:app --reload --port 8000` |
+| 2 (Frontend) | `cd kanban-frontend && npm run dev` |
+
+---
+
 ## Estructura del Repositorio
 
 ```

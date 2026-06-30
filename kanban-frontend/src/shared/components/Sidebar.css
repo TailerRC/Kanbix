@@ -1,0 +1,268 @@
+/* ===================================================================
+   Sidebar — Kanbix
+   Sidebar blanca con pill activo grafito, CTA card, logout
+   =================================================================== */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  z-index: 100;
+  transition: width var(--transition-base), transform var(--transition-base);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ---- Logo ---- */
+.sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 8px;
+  text-decoration: none;
+}
+
+.sidebar__logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-light));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-weight: var(--fw-extrabold);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar__logo-text {
+  font-size: 20px;
+  font-weight: var(--fw-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* ---- Section label ---- */
+.sidebar__section-label {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 20px 20px 8px;
+}
+
+/* ---- Navigation ---- */
+.sidebar__nav {
+  flex: 1;
+  padding: 12px 12px 0;
+}
+
+.sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  position: relative;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar__nav-item:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.sidebar__nav-item--active {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.sidebar__nav-item--active:hover {
+  background-color: var(--color-primary-hover);
+  color: #FFFFFF;
+}
+
+.sidebar__nav-item--active .sidebar__nav-icon {
+  color: #FFFFFF;
+}
+
+.sidebar__nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.sidebar__nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  padding: 0 6px;
+}
+
+.sidebar__nav-badge--info {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.sidebar__nav-badge--muted {
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+/* ---- Divider ---- */
+.sidebar__divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 8px 20px;
+}
+
+/* ---- Support section ---- */
+.sidebar__support {
+  padding: 0 12px;
+}
+
+/* ---- CTA Card ---- */
+.sidebar__cta {
+  margin: 16px 14px;
+  padding: 20px 16px;
+  background: linear-gradient(135deg, #F0F0FF 0%, #E8E8FF 100%);
+  border-radius: var(--radius-md);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar__cta-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.sidebar__cta-text {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.sidebar__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 20px;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.sidebar__cta-btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* ---- Logout ---- */
+.sidebar__logout {
+  padding: 12px 12px 20px;
+}
+
+.sidebar__logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  color: var(--color-error);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.sidebar__logout-btn:hover {
+  background-color: var(--color-error-bg);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1279px) {
+  .sidebar {
+    width: var(--sidebar-collapsed);
+  }
+  .sidebar__logo-text,
+  .sidebar__section-label,
+  .sidebar__cta,
+  .sidebar__nav-item span,
+  .sidebar__nav-badge {
+    display: none;
+  }
+  .sidebar__nav-item {
+    justify-content: center;
+    padding: 12px;
+  }
+  .sidebar__logout-btn span {
+    display: none;
+  }
+  .sidebar__logout-btn {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar--open {
+    transform: translateX(0);
+    width: var(--sidebar-width);
+  }
+  .sidebar--open .sidebar__logo-text,
+  .sidebar--open .sidebar__section-label,
+  .sidebar--open .sidebar__cta,
+  .sidebar--open .sidebar__nav-item span,
+  .sidebar--open .sidebar__nav-badge {
+    display: initial;
+  }
+  .sidebar--open .sidebar__nav-item {
+    justify-content: flex-start;
+    padding: 10px 14px;
+  }
+}

@@ -1,0 +1,7 @@
+# Configuración de Pyrefly (analizador del IDE).
+# Apunta al intérprete del entorno virtual para que encuentre las dependencias
+# instaladas (fastapi, motor, bson, bcrypt, jose, ...). Sin esto, el IDE usa el
+# Python global del sistema y reporta falsos "Cannot find module".
+python-interpreter = "venv/Scripts/python.exe"
+
+project-includes = ["app"]

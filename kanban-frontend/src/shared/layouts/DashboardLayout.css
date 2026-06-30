@@ -1,0 +1,46 @@
+/* ===================================================================
+   DashboardLayout — Kanbix
+   Sidebar (240px) + Topbar (64px) + Content area
+   =================================================================== */
+
+.dashboard-layout {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
+
+.dashboard-layout__content {
+  margin-left: var(--sidebar-width);
+  margin-top: var(--navbar-height);
+  padding: 28px;
+  min-height: calc(100vh - var(--navbar-height));
+  transition: margin-left var(--transition-base);
+}
+
+/* ---- Overlay (mobile) ---- */
+.dashboard-layout__overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 95;
+  backdrop-filter: blur(2px);
+}
+
+.dashboard-layout__overlay--visible {
+  display: block;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1279px) {
+  .dashboard-layout__content {
+    margin-left: var(--sidebar-collapsed);
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-layout__content {
+    margin-left: 0;
+    padding: 20px 16px;
+  }
+}

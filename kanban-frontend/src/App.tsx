@@ -1,11 +1,23 @@
-import HealthCheck from "./components/HealthCheck";
+import { Routes, Route } from 'react-router-dom';
+import DashboardLayout from './shared/layouts/DashboardLayout';
+import DashboardPage from './features/reports/pages/DashboardPage';
+import HealthCheck from './components/HealthCheck';
 
 function App() {
   return (
-    <div>
-      <h1 style={{ textAlign: "center", marginTop: "40px" }}>Kanbix 🧩</h1>
-      <HealthCheck />
-    </div>
+    <Routes>
+      {/* Dashboard with layout */}
+      <Route
+        path="/"
+        element={
+          <DashboardLayout>
+            <DashboardPage />
+          </DashboardLayout>
+        }
+      />
+      {/* Health check (no layout) */}
+      <Route path="/health" element={<HealthCheck />} />
+    </Routes>
   );
 }
 

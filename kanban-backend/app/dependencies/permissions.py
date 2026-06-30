@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.core.security import decode_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 class Role(str, Enum):
@@ -34,6 +34,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
     return payload
+
+
+def get_current_user_id(current_user: dict = Depends(get_current_user)) -> str:
+    """Atajo para obtener el id (sub) del usuario autenticado."""
+    return str(current_user.get("sub"))
 
 
 def require_role(minimum_role: Role):

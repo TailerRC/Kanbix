@@ -1,0 +1,106 @@
+/* ===================================================================
+   StatCard — Kanbix
+   Tarjeta de métrica con número grande, tendencia y mini-indicador
+   =================================================================== */
+
+.stat-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: box-shadow var(--transition-base), transform var(--transition-fast);
+  animation: fadeIn 0.4s ease both;
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.stat-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card__label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+}
+
+.stat-card__value {
+  font-size: 28px;
+  font-weight: var(--fw-extrabold);
+  color: var(--color-text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.stat-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.stat-card__trend--up {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.stat-card__trend--down {
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+}
+
+.stat-card__trend-label {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* ---- Mini circular indicator ---- */
+.stat-card__indicator {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.stat-card__indicator svg {
+  width: 52px;
+  height: 52px;
+  transform: rotate(-90deg);
+}
+
+.stat-card__indicator-bg {
+  fill: none;
+  stroke: var(--color-bg);
+  stroke-width: 4;
+}
+
+.stat-card__indicator-fill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.stat-card__indicator-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  color: var(--color-text-secondary);
+}

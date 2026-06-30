@@ -83,7 +83,7 @@
 .admin-users__btn-create {
   padding: 0.6rem 1.375rem;
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   border: none;
   border-radius: var(--radius-pill, 999px);
   font-size: 0.875rem;

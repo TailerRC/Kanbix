@@ -315,3 +315,39 @@
     max-width: 200px;
   }
 }
+
+/* ---- Admin Topbar Styles ---- */
+.topbar__admin-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-sans);
+}
+
+.topbar__admin-badge {
+  background-color: var(--color-brand, #6366f1);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: var(--fw-bold, 700);
+  letter-spacing: 0.5px;
+}
+
+.topbar__admin-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary, #64748b);
+  font-size: var(--fs-label, 0.85rem);
+  font-weight: var(--fw-medium, 500);
+}
+
+.topbar__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+

@@ -15,7 +15,6 @@ interface NavItem {
 const menuItems: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
   { to: '/projects', label: 'Proyectos', icon: 'backlog' },
-  { to: '/board', label: 'Tablero', icon: 'board', badge: 11, badgeType: 'muted' },
 ];
 
 interface SidebarProps {
@@ -58,13 +57,14 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         <span className="sidebar__logo-text">Kanbix</span>
       </NavLink>
 
-      {/* Menu label */}
-      <div className="sidebar__section-label">Menú</div>
-
-      {/* Main navigation */}
-      <nav className="sidebar__nav">{menuItems.map(renderItem)}</nav>
-
-      <div className="sidebar__divider" />
+      {/* Menu label (only for non-Admins) */}
+      {user?.rol_global !== 'Admin' && (
+        <>
+          <div className="sidebar__section-label">Menú</div>
+          <nav className="sidebar__nav">{menuItems.map(renderItem)}</nav>
+          <div className="sidebar__divider" />
+        </>
+      )}
 
       {/* Administración (solo para Admin) */}
       {user?.rol_global === 'Admin' && (
@@ -72,6 +72,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <div className="sidebar__section-label">Administración</div>
           <nav className="sidebar__nav">
             {renderItem({ to: '/admin/users', label: 'Usuarios', icon: 'users' })}
+            {renderItem({ to: '/admin/projects', label: 'Proyectos Activos', icon: 'backlog' })}
             {renderItem({ to: '/admin/logs', label: 'Bitácora', icon: 'report-doc' })}
             {renderItem({ to: '/admin/tickets', label: 'Tickets', icon: 'help' })}
           </nav>
@@ -82,7 +83,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       {/* Soporte */}
       <div className="sidebar__section-label">Soporte</div>
       <nav className="sidebar__nav">
-        {renderItem({ to: '/help', label: 'Ayuda', icon: 'help' })}
+        {user?.rol_global !== 'Admin' && renderItem({ to: '/help', label: 'Ayuda', icon: 'help' })}
         {renderItem({ to: '/settings', label: 'Configuración', icon: 'settings' })}
       </nav>
     </aside>

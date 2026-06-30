@@ -14,8 +14,13 @@ export async function getProject(id: string): Promise<Project> {
   return data;
 }
 
-export async function createProject(name: string, description?: string): Promise<Project> {
-  const { data } = await api.post<Project>('/projects', { name, description });
+export interface InitialMemberInput {
+  user_id: string;
+  rol: 'Manager' | 'Developer' | 'Viewer';
+}
+
+export async function createProject(name: string, description?: string, members?: InitialMemberInput[]): Promise<Project> {
+  const { data } = await api.post<Project>('/projects', { name, description, members });
   return data;
 }
 

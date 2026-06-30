@@ -45,18 +45,6 @@ const FAQ_ITEMS = [
 ];
 
 // ---------------------------------------------------------------------------
-// Sistema de estado
-// ---------------------------------------------------------------------------
-
-const SYSTEM_STATUS = [
-  { name: 'API Backend', status: 'operational', latency: '42ms' },
-  { name: 'Base de datos (MongoDB Atlas)', status: 'operational', latency: '18ms' },
-  { name: 'Autenticación (JWT)', status: 'operational', latency: '< 5ms' },
-  { name: 'Notificaciones (WebSocket)', status: 'operational', latency: '—' },
-  { name: 'Correo transaccional (Resend)', status: 'operational', latency: '—' },
-];
-
-// ---------------------------------------------------------------------------
 // Atajos de teclado
 // ---------------------------------------------------------------------------
 
@@ -189,44 +177,8 @@ export default function HelpPage() {
           </section>
         </div>
 
-        {/* RIGHT — Estado del sistema + Atajos */}
+        {/* RIGHT — Atajos */}
         <div className="help-col">
-          {/* Estado del sistema */}
-          {isAdmin && (
-            <section className="help-card">
-              <div className="help-card__header">
-                <div className="help-card__icon help-card__icon--success">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="help-card__title">Estado del Sistema</h2>
-                  <p className="help-card__sub">Todos los servicios operativos</p>
-                </div>
-              </div>
-              <div className="help-status-list">
-                {SYSTEM_STATUS.map(s => (
-                  <div key={s.name} className="help-status-row">
-                    <div className="help-status-info">
-                      <span className={`help-status-dot help-status-dot--${s.status}`} />
-                      <span className="help-status-name">{s.name}</span>
-                    </div>
-                    <div className="help-status-right">
-                      {s.latency !== '—' && <span className="help-status-latency">{s.latency}</span>}
-                      <span className={`help-status-badge help-status-badge--${s.status}`}>
-                        {s.status === 'operational' ? 'Operativo' : s.status === 'degraded' ? 'Degradado' : 'Caído'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="help-status-uptime">
-                <span className="help-status-uptime-label">Uptime últimos 30 días</span>
-                <span className="help-status-uptime-value">99.9%</span>
-              </div>
-            </section>
-          )}
 
           {/* Atajos de teclado */}
 

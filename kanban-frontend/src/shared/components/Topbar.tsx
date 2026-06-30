@@ -58,29 +58,41 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
         <Icon name="menu" size={22} />
       </button>
 
-      {/* Search bar */}
-      <div className="topbar__search">
-        <input
-          type="text"
-          className="topbar__search-input"
-          placeholder="Buscar tareas, sprints, miembros..."
-          id="global-search"
-        />
-        <span className="topbar__search-icon">
-          <Icon name="search" size={18} />
-        </span>
-      </div>
+      {/* Search bar or admin status info */}
+      {user?.rol_global !== 'Admin' ? (
+        <div className="topbar__search">
+          <input
+            type="text"
+            className="topbar__search-input"
+            placeholder="Buscar tareas, sprints, miembros..."
+            id="global-search"
+          />
+          <span className="topbar__search-icon">
+            <Icon name="search" size={18} />
+          </span>
+        </div>
+      ) : (
+        <div className="topbar__admin-title">
+          <span className="topbar__admin-badge">Panel de TI</span>
+          <span className="topbar__admin-status">
+            <span className="topbar__status-dot" />
+            Consola de Administración
+          </span>
+        </div>
+      )}
 
       {/* Action icons */}
-      <div className="topbar__actions">
-        <button className="topbar__action-btn" aria-label="Reportes" title="Reportes">
-          <Icon name="report-doc" size={19} />
-        </button>
-        <button className="topbar__action-btn" aria-label="Notificaciones" title="Notificaciones">
-          <Icon name="bell" size={19} />
-          <span className="topbar__notification-dot" />
-        </button>
-      </div>
+      {user?.rol_global !== 'Admin' && (
+        <div className="topbar__actions">
+          <button className="topbar__action-btn" aria-label="Reportes" title="Reportes">
+            <Icon name="report-doc" size={19} />
+          </button>
+          <button className="topbar__action-btn" aria-label="Notificaciones" title="Notificaciones">
+            <Icon name="bell" size={19} />
+            <span className="topbar__notification-dot" />
+          </button>
+        </div>
+      )}
 
       {/* User profile + dropdown */}
       <div className="topbar__user-wrap" ref={dropdownRef}>

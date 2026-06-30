@@ -13,10 +13,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/api/api';
 import { getErrorMessage } from '../../../shared/api/api';
 import Icon, { Logo } from '../../../shared/components/Icon';
+import { useAuth } from '../../../shared/auth/AuthContext';
 import './ChangePasswordPage.css';
 
 export default function ChangePasswordPage() {
   const navigate            = useNavigate();
+  const { clearChangePasswordFlag, refreshUser } = useAuth();
   const [current, setCurrent]       = useState('');
   const [next, setNext]             = useState('');
   const [confirm, setConfirm]       = useState('');
@@ -25,6 +27,7 @@ export default function ChangePasswordPage() {
   const [loading, setLoading]       = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNext, setShowNext]     = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const validate = (): string => {
     if (!current)                       return 'Ingresa tu contraseña actual';
@@ -50,9 +53,11 @@ export default function ChangePasswordPage() {
         current_password: current,
         new_password: next,
       });
+      clearChangePasswordFlag();
+      await refreshUser();
       setSuccess(true);
-      // Redirigir al dashboard tras 2 segundos
-      setTimeout(() => navigate('/', { replace: true }), 2000);
+      // Redirigir al dashboard tras 1.5 segundos
+      setTimeout(() => navigate('/', { replace: true }), 1500);
     } catch (err) {
       setError(getErrorMessage(err, 'No se pudo cambiar la contraseña'));
     } finally {
@@ -66,7 +71,7 @@ export default function ChangePasswordPage() {
         {/* Logo */}
         <div className="change-pwd__logo">
           <span className="change-pwd__logo-mark">
-            <Logo size={22} color="var(--color-brand, #6366F1)" />
+            <Logo size={22} color="#FFFFFF" />
           </span>
           <span className="change-pwd__logo-text">Kanbix</span>
         </div>
@@ -146,14 +151,24 @@ export default function ChangePasswordPage() {
             {/* Confirmar contraseña */}
             <label className="change-pwd__field">
               <span>Confirmar nueva contraseña</span>
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                required
-              />
+              <div className="change-pwd__input-wrap">
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="change-pwd__toggle"
+                  onClick={() => setShowConfirm((s) => !s)}
+                  aria-label={showConfirm ? 'Ocultar' : 'Mostrar'}
+                >
+                  <Icon name={showConfirm ? 'eye-off' : 'eye'} size={18} />
+                </button>
+              </div>
               {confirm && next !== confirm && (
                 <small className="change-pwd__mismatch">Las contraseñas no coinciden</small>
               )}

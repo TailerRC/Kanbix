@@ -10,6 +10,7 @@ import ProfilePage from './features/auth/pages/ProfilePage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
 import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
+import AdminProjectsPage from './features/projects/pages/AdminProjectsPage';
 import BoardPage from './features/kanban/pages/BoardPage';
 import BacklogPage from './features/kanban/pages/BacklogPage';
 import HealthCheck from './components/HealthCheck';
@@ -23,8 +24,11 @@ function useKeyboardShortcuts() {
   const navigate = useNavigate();
   const lastKeyRef = useRef<string | null>(null);
   const timeoutRef = useRef<number | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (user?.rol_global === 'Admin') return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignorar atajos si el usuario escribe en un campo de texto
       const tag = (e.target as HTMLElement).tagName;
@@ -191,6 +195,7 @@ function App() {
       {/* Rutas exclusivas para Admin (RN-05, matriz de permisos) */}
       <Route element={<AdminLayout />}>
         <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/projects" element={<AdminProjectsPage />} />
         <Route path="/admin/logs" element={<SystemLogsPage />} />
         <Route path="/admin/tickets" element={<TicketsAdminPage />} />
       </Route>

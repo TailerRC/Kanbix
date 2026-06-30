@@ -11,8 +11,8 @@ async def create(db, payload: ProjectCreate, creador_id: str) -> dict:
     return await service.create_project(db, payload, creador_id)
 
 
-async def list_(db, user_id: str, page: int, limit: int) -> dict:
-    return await service.list_projects(db, user_id, page, limit)
+async def list_(db, current_user: dict, page: int, limit: int) -> dict:
+    return await service.list_projects(db, current_user, page, limit)
 
 
 async def detail(db, project_id: str, current_user: dict) -> dict:

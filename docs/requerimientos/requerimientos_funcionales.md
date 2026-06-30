@@ -210,3 +210,17 @@
 | ID | Descripción |
 |----|-------------|
 | RF91 | El usuario puede exportar el reporte de un sprint en formato PDF |
+
+---
+
+## Módulo 7 — Consola de TI & Administración Global
+*Responsable: Equipo de TI*
+
+### Consola de TI
+| ID | Descripción |
+|----|-------------|
+| RF92 | El usuario **Admin** puede ver la lista de todos los proyectos activos del sistema en una consola centralizada de administración (`/admin/projects`). |
+| RF93 | El usuario **Admin** puede eliminar cualquier proyecto en cascada (tableros, columnas, tareas y comentarios) desde la consola centralizada de administración. |
+| RF94 | El usuario **Admin** dispone de una consola con el **Estado del Sistema** en tiempo real que mide la latencia y disponibilidad del backend, base de datos MongoDB Atlas, autenticación JWT, notificaciones WebSocket y correo transaccional. |
+| RF95 | El sistema restringe la navegación del **Admin** para ocultar el Dashboard personal, el buscador de tareas global y el botón de notificaciones, y desactiva los atajos de teclado operativos. |
+

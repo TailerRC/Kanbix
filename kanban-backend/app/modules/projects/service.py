@@ -20,7 +20,19 @@ async def create_project(db, payload: ProjectCreate, creador_id: str) -> dict:
         raise APIError(400, "Ya existe un proyecto con ese nombre", "name")
 
     creador_oid = to_object_id(creador_id, "id_creador", "Usuario")
-    doc = model.new_project_document(payload.name, payload.description, creador_oid)
+
+    initial_members = []
+    if payload.members:
+        for m in payload.members:
+            try:
+                member_oid = to_object_id(m.user_id, "user_id", "Usuario")
+                initial_members.append({"user_id": member_oid, "rol": m.rol})
+            except Exception:
+                raise APIError(400, f"ID de usuario inválido: {m.user_id}", "members")
+
+    doc = model.new_project_document(
+        payload.name, payload.description, creador_oid, initial_members
+    )
     result = await db.projects.insert_one(doc)
 
     await log_action(db, creador_id, "crear_proyecto",
@@ -34,12 +46,16 @@ async def create_project(db, payload: ProjectCreate, creador_id: str) -> dict:
     }
 
 
-async def list_projects(db, user_id: str, page: int, limit: int) -> dict:
+async def list_projects(db, current_user: dict, page: int, limit: int) -> dict:
     limit = max(1, min(limit, 100))
     page = max(1, page)
     skip = (page - 1) * limit
-    user_oid = to_object_id(user_id, "id", "Usuario")
-    query = {"members.user_id": user_oid}
+    user_id = str(current_user.get("sub"))
+    if current_user.get("role") == "Admin":
+        query = {}
+    else:
+        user_oid = to_object_id(user_id, "id", "Usuario")
+        query = {"members.user_id": user_oid}
 
     total = await db.projects.count_documents(query)
     cursor = db.projects.find(query).sort("created_at", -1).skip(skip).limit(limit)
@@ -47,11 +63,11 @@ async def list_projects(db, user_id: str, page: int, limit: int) -> dict:
     async for p in cursor:
         data.append({
             "id": str(p["_id"]),
-            "name": p["name"],
-            "description": p.get("description"),
+            "name": p.get("name") or p.get("nombre") or "Proyecto Sin Nombre",
+            "description": p.get("description") or p.get("descripcion"),
             "role": get_project_role(p, user_id) or "Viewer",
             "member_count": len(p.get("members", [])),
-            "created_at": p["created_at"],
+            "created_at": p.get("created_at") or datetime.now(timezone.utc),
         })
     return {"total": total, "page": page, "limit": limit, "data": data}
 
@@ -77,10 +93,10 @@ async def get_project_detail(db, project_id: str, current_user: dict) -> dict:
 
     return {
         "id": str(project["_id"]),
-        "name": project["name"],
-        "description": project.get("description"),
-        "id_creador": str(project["id_creador"]),
-        "created_at": project["created_at"],
+        "name": project.get("name") or project.get("nombre") or "Proyecto Sin Nombre",
+        "description": project.get("description") or project.get("descripcion"),
+        "id_creador": str(project.get("id_creador") or ""),
+        "created_at": project.get("created_at") or datetime.now(timezone.utc),
         "members": members,
     }
 

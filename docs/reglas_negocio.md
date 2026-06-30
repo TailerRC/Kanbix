@@ -41,3 +41,5 @@
 | RN-32 | Un usuario bloqueado por intentos fallidos (RN-04) solo puede ser desbloqueado por un Admin. El Admin puede desbloquear la cuenta manualmente desde el panel de administración. |
 | RN-33 | El sistema debe registrar en un log de auditoría todas las acciones sensibles: creación de usuarios, modificación de roles globales, creación/eliminación de proyectos, cambios de estado de proyectos, y cambios de roles por proyecto. |
 | RN-34 | El auto-registro público de usuarios está deshabilitado. Todas las cuentas son creadas por un Admin mediante endpoint protegido y autenticado. |
+| RN-35 | La barra lateral y el encabezado de navegación se adaptan dinámicamente según el rol global del usuario. El rol global `Admin` (TI) tiene una consola dedicada que oculta el dashboard general, buscador global y notificaciones operativas, y desactiva los atajos de teclado del sistema. |
+| RN-36 | El rol global `Admin` (TI) puede listar todos los proyectos activos en el sistema y eliminarlos de forma irreversible en cascada, independientemente de si es miembro de dichos proyectos o no. |

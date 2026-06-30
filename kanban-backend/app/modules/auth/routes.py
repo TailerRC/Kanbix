@@ -157,6 +157,18 @@ async def update_preferences(
     return await controller.update_preferences(get_database(), user_id, payload)
 
 
+@router.get(
+    "/users",
+    response_model=UserListResponse,
+    summary="Listar todos los usuarios para selección",
+    description="Permite a cualquier usuario autenticado obtener el listado de usuarios del sistema.",
+)
+async def list_users_for_selection(
+    page: int = Query(1, ge=1),
+    limit: int = Query(100, ge=1, le=100),
+    _=Depends(get_current_user),
+):
+    return await controller.list_users(get_database(), page, limit)
 
 # ---------------------------------------------------------------------------
 # /tickets/* — cualquier usuario autenticado

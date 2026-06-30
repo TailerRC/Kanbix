@@ -250,3 +250,107 @@
   gap: 12px;
   margin-top: 4px;
 }
+
+/* Step 2 wide modal styling */
+.projects__modal.projects__modal--wide {
+  max-width: 800px !important;
+  width: 100%;
+  transition: max-width var(--transition-base);
+}
+
+.projects__members-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.projects__members-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--color-text-secondary);
+}
+
+.projects__members-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+  width: 100%;
+}
+
+.projects__members-loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-body);
+}
+
+.projects__table-wrapper {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.projects__users-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.projects__users-table th,
+.projects__users-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.projects__users-table th {
+  background-color: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-weight: var(--fw-semibold);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.projects__users-table tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.03);
+}
+
+.st-select-premium {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.825rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.st-select-premium:focus {
+  border-color: var(--color-brand);
+}
+
+.text-small {
+  font-size: 0.75rem;
+}
+
+.projects__users-row--selected {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+.projects__users-row--selected:hover {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+

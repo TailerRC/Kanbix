@@ -161,7 +161,7 @@ Ruta de las skills:
 ```
 
 ### Auth
-- Todos los endpoints (excepto `/auth/login` y `/auth/register`) requieren `Authorization: Bearer <token>`.
+- Todos los endpoints (excepto `/auth/login`) requieren `Authorization: Bearer <token>`. El registro de usuarios es exclusivo de Admin (Enterprise).
 - El middleware de auth vive en `app/shared/middleware/`.
 - Para permisos por rol, consultar `docs/matriz_roles_permisos.md`.
 

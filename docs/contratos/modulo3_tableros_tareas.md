@@ -292,7 +292,7 @@ Crea una nueva tarea dentro de una columna.
 | title | string | Sí | Título de la tarea |
 | description | string | No | Descripción detallada |
 | column_id | string | No | ID de la columna destino (default: primera columna) |
-| priority | string | No | Alta \| Media \| Baja (default: Media) |
+| priority | string | No | Baja \| Media \| Alta \| Crítica (default: Media) |
 | assignee_id | string | No | ID del usuario asignado |
 | due_date | string | No | Fecha límite en ISO 8601 UTC |
 | tags | array[string] | No | Etiquetas para clasificación |
@@ -341,7 +341,7 @@ Actualiza los campos de una tarea (título, descripción, prioridad, etc.).
 |-------|------|-----------|-------------|
 | title | string | No | Nuevo título |
 | description | string | No | Nueva descripción |
-| priority | string | No | Alta \| Media \| Baja |
+| priority | string | No | Baja \| Media \| Alta \| Crítica |
 | assignee_id | string | No | Cambiar asignado |
 | due_date | string | No | Cambiar fecha límite |
 

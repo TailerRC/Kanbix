@@ -210,9 +210,11 @@
 /* Fila bloqueada — leve tinte ámbar */
 .admin-users__row--locked {
   background: var(--color-warning-bg, #FEF3C7);
+  border-left: 3px solid var(--color-warning, #D97706);
 }
 .admin-users__row--locked:hover {
-  background: #fde68a !important;
+  background: var(--color-warning-bg, #FEF3C7) !important;
+  filter: brightness(0.95);
 }
 
 /* Cells específicos */
@@ -285,7 +287,8 @@
 }
 
 .admin-users__btn-unlock:hover {
-  background: #fde68a;
+  background: var(--color-warning-bg, #FEF3C7);
+  filter: brightness(0.92);
   border-color: var(--color-warning, #D97706);
 }
 
@@ -366,7 +369,7 @@
 .admin-modal__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.5);
+  background: var(--color-overlay, rgba(17, 24, 39, 0.5));
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -613,7 +616,8 @@
 }
 
 .admin-users__action-btn--unlock:hover {
-  background: #fde68a;
+  background: var(--color-warning-bg, #FEF3C7);
+  filter: brightness(0.92);
   border-color: var(--color-warning, #D97706);
   color: var(--color-warning, #D97706);
 }

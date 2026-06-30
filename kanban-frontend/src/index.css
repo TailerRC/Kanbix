@@ -35,12 +35,20 @@ html {
   /* Semánticos */
   --color-error: #DC2626;
   --color-error-bg: #FEE2E2;
+  --color-error-border: rgba(220, 38, 38, 0.25);
   --color-warning: #D97706;
   --color-warning-bg: #FEF3C7;
+  --color-warning-border: rgba(217, 119, 6, 0.25);
   --color-success: #16A34A;
   --color-success-bg: #DCFCE7;
+  --color-success-border: rgba(22, 163, 74, 0.25);
   --color-info: #2563EB;
   --color-info-bg: #DBEAFE;
+  --color-info-border: rgba(37, 99, 235, 0.25);
+  --color-update-bg: #F1F5F9;
+  --color-update-border: #CBD5E1;
+  --color-update-text: #475569;
+  --color-overlay: rgba(17, 24, 39, 0.5);
 
   /* Acentos de columnas Kanban */
   --color-backlog: #94A3B8;
@@ -108,6 +116,20 @@ html {
   --color-primary: #F8FAFC;
   --color-primary-hover: #E2E8F0;
   --color-brand: #818CF8;
+
+  /* Semánticos oscuros con fondos opacos y mayor contraste */
+  --color-error-bg: rgba(220, 38, 38, 0.15);
+  --color-error-border: rgba(220, 38, 38, 0.4);
+  --color-warning-bg: rgba(217, 119, 6, 0.15);
+  --color-warning-border: rgba(217, 119, 6, 0.4);
+  --color-success-bg: rgba(22, 163, 74, 0.15);
+  --color-success-border: rgba(22, 163, 74, 0.4);
+  --color-info-bg: rgba(37, 99, 235, 0.15);
+  --color-info-border: rgba(37, 99, 235, 0.4);
+  --color-update-bg: rgba(71, 85, 105, 0.2);
+  --color-update-border: rgba(71, 85, 105, 0.4);
+  --color-update-text: #94A3B8;
+  --color-overlay: rgba(15, 23, 42, 0.75);
 }
 
 [data-theme="dark"] body {

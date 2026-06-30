@@ -114,7 +114,7 @@
 }
 
 .admin-projects__table tbody tr:hover {
-  background-color: rgba(99, 102, 241, 0.01);
+  background-color: var(--color-bg, #f8fafc);
 }
 
 .admin-projects__name {
@@ -260,18 +260,21 @@
 }
 
 .admin-status__badge--operational {
-  background-color: rgba(16, 185, 129, 0.08);
-  color: #10b981;
+  background-color: var(--color-success-bg, rgba(16, 185, 129, 0.08));
+  color: var(--color-success, #10b981);
+  border: 1px solid var(--color-success-border, transparent);
 }
 
 .admin-status__badge--degraded {
-  background-color: rgba(245, 158, 11, 0.08);
-  color: #f59e0b;
+  background-color: var(--color-warning-bg, rgba(245, 158, 11, 0.08));
+  color: var(--color-warning, #f59e0b);
+  border: 1px solid var(--color-warning-border, transparent);
 }
 
 .admin-status__badge--down {
-  background-color: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
+  background-color: var(--color-error-bg, rgba(239, 68, 68, 0.08));
+  color: var(--color-error, #ef4444);
+  border: 1px solid var(--color-error-border, transparent);
 }
 
 .admin-status__footer {
@@ -288,7 +291,7 @@
 .projects__overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(17, 24, 39, 0.45);
+  background-color: var(--color-overlay, rgba(17, 24, 39, 0.45));
   display: flex;
   align-items: center;
   justify-content: center;

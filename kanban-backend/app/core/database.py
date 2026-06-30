@@ -1,10 +1,12 @@
+from typing import Any, Optional
+
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 
 
 class MongoDB:
-    client: AsyncIOMotorClient = None
-    db = None
+    client: Optional[AsyncIOMotorClient] = None
+    db: Any = None
 
 
 mongodb = MongoDB()
@@ -24,6 +26,6 @@ async def close_mongo_connection():
         print("[OK] Conexion a MongoDB cerrada")
 
 
-def get_database():
+def get_database() -> Any:
     """Dependency para inyectar la base de datos en los routers."""
     return mongodb.db

@@ -1,0 +1,161 @@
+/* ===================================================================
+   ActivityTable — Historial de actividad
+   =================================================================== */
+
+.activity-table {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+  animation: fadeIn 0.5s ease both;
+  animation-delay: 0.2s;
+}
+
+.activity-table__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.activity-table__title {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-primary);
+}
+
+.activity-table__filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.activity-table__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.activity-table__table th {
+  text-align: left;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.activity-table__table th .th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.activity-table__table th .sort-icon {
+  color: var(--color-text-muted);
+  opacity: 0.55;
+}
+
+.activity-table__table td {
+  padding: 14px 12px;
+  font-size: var(--fs-body);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-bg);
+  vertical-align: middle;
+}
+
+.activity-table__table tr:last-child td {
+  border-bottom: none;
+}
+
+.activity-table__table tr:hover td {
+  background-color: var(--color-bg);
+}
+
+.activity-table__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  color: var(--color-text-muted);
+}
+
+.activity-table__date {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-label);
+  white-space: nowrap;
+}
+
+.activity-table__event {
+  font-weight: var(--fw-medium);
+}
+
+.activity-table__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.activity-table__status--completed {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.activity-table__status--in-progress {
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+}
+
+.activity-table__status--blocked {
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+}
+
+.activity-table__status--review {
+  color: var(--color-review);
+  background-color: #F3F0FF;
+}
+
+.activity-table__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity-table__user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
+}
+
+/* ---- Responsive scroll ---- */
+@media (max-width: 640px) {
+  .activity-table__table-wrap {
+    overflow-x: auto;
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  .activity-table__table {
+    min-width: 520px;
+  }
+}

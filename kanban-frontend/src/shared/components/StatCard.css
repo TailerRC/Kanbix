@@ -1,0 +1,108 @@
+/* ===================================================================
+   StatCard — Kanbix
+   Tarjeta de métrica con número grande, tendencia y mini-indicador
+   =================================================================== */
+
+.stat-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: box-shadow var(--transition-base), transform var(--transition-fast);
+  animation: fadeIn 0.4s ease both;
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.stat-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card__label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+}
+
+.stat-card__value {
+  font-size: 28px;
+  font-weight: var(--fw-extrabold);
+  color: var(--color-text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.stat-card__trend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.stat-card__trend--up {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.stat-card__trend--down {
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+}
+
+.stat-card__trend-label {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+}
+
+/* ---- Barra vertical con chip de porcentaje (estilo Finova) ---- */
+.stat-card__gauge {
+  position: relative;
+  width: 30px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.stat-card__gauge-fill {
+  position: relative;
+  width: 100%;
+  min-height: 22px;
+  background-color: var(--accent);
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+  transition: height 0.8s ease;
+}
+
+.stat-card__gauge-chip {
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  color: #FFFFFF;
+  line-height: 1;
+}

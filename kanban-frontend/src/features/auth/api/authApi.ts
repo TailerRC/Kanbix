@@ -127,3 +127,51 @@ export async function adminChangeRole(
   });
   return data;
 }
+
+export interface AdminUpdateUserPayload {
+  nombre_completo?: string;
+  email?: string;
+  activo?: boolean;
+  password?: string;
+  rol_global?: RolGlobal;
+}
+
+/** PUT /api/v1/admin/users/{id} — actualizar info completa del usuario (solo Admin) */
+export async function adminUpdateUser(
+  userId: string,
+  payload: AdminUpdateUserPayload
+): Promise<UserListItem> {
+  const { data } = await api.put<UserListItem>(`/admin/users/${userId}`, payload);
+  return data;
+}
+
+export interface AuditLogItem {
+  id: string;
+  id_usuario?: string | null;
+  accion: string;
+  detalle: string;
+  id_recurso?: string | null;
+  fecha: string;
+  usuario_ejecutor_email?: string | null;
+  usuario_ejecutor_nombre?: string | null;
+  recurso_afectado_nombre?: string | null;
+  recurso_afectado_tipo?: string | null;
+}
+
+export interface AuditLogListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  data: AuditLogItem[];
+}
+
+/** GET /api/v1/admin/logs — listar logs de auditoría paginado (solo Admin) */
+export async function adminListLogs(
+  page = 1,
+  limit = 50
+): Promise<AuditLogListResponse> {
+  const { data } = await api.get<AuditLogListResponse>('/admin/logs', {
+    params: { page, limit },
+  });
+  return data;
+}

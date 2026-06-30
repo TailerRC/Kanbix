@@ -141,16 +141,142 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
 }
 
 // --------------------------------------------------------------------------
+// Modal de edición
+// --------------------------------------------------------------------------
+
+import type { UserListItem as AuthUserListItem, AdminUpdateUserPayload } from '../api/authApi';
+
+interface EditModalProps {
+  user: AuthUserListItem;
+  onClose: () => void;
+  onSubmit: (userId: string, data: AdminUpdateUserPayload) => Promise<void>;
+}
+
+function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
+  const [email, setEmail]           = useState(user.email);
+  const [nombre, setNombre]         = useState(user.nombre_completo);
+  const [password, setPassword]     = useState('');
+  const [rol, setRol]               = useState<RolGlobal>(user.rol_global);
+  const [activo, setActivo]         = useState(user.activo);
+  const [error, setError]           = useState('');
+  const [loading, setLoading]       = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const payload: AdminUpdateUserPayload = {};
+      if (nombre !== user.nombre_completo) payload.nombre_completo = nombre;
+      if (email !== user.email) payload.email = email;
+      if (password) payload.password = password;
+      if (rol !== user.rol_global) payload.rol_global = rol;
+      if (activo !== user.activo) payload.activo = activo;
+
+      if (Object.keys(payload).length === 0) {
+        onClose();
+        return;
+      }
+
+      await onSubmit(user.id, payload);
+      onClose();
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo actualizar el usuario'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="admin-modal__overlay" onClick={onClose}>
+      <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal__header">
+          <h2 className="admin-modal__title">Editar usuario</h2>
+          <button className="admin-modal__close" onClick={onClose} aria-label="Cerrar">✕</button>
+        </div>
+
+        {error && <div className="admin-modal__error">{error}</div>}
+
+        <form className="admin-modal__form" onSubmit={handleSubmit}>
+          <label className="admin-modal__field">
+            <span>Nombre completo</span>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Juan Pérez"
+              required
+              minLength={1}
+            />
+          </label>
+
+          <label className="admin-modal__field">
+            <span>Correo electrónico</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="usuario@kanbix.com"
+              required
+            />
+          </label>
+
+          <label className="admin-modal__field">
+            <span>Nueva contraseña (dejar en blanco para conservar)</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mínimo 8 car., mayúscula, minúscula y número"
+            />
+            {password && <small>El usuario deberá cambiarla en su primer inicio de sesión.</small>}
+          </label>
+
+          <label className="admin-modal__field">
+            <span>Rol global</span>
+            <select value={rol} onChange={(e) => setRol(e.target.value as RolGlobal)}>
+              <option value="Viewer">Viewer</option>
+              <option value="Developer">Developer</option>
+              <option value="Manager">Manager</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </label>
+
+          <label className="admin-modal__field admin-modal__field--checkbox">
+            <input
+              type="checkbox"
+              checked={activo}
+              onChange={(e) => setActivo(e.target.checked)}
+            />
+            <span>Cuenta activa / habilitada</span>
+          </label>
+
+          <div className="admin-modal__actions">
+            <button type="button" className="admin-modal__btn--cancel" onClick={onClose}>
+              Cancelar
+            </button>
+            <button type="submit" className="admin-modal__btn--submit" disabled={loading}>
+              {loading ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
 // Página principal
 // --------------------------------------------------------------------------
 
 export default function AdminUsersPage() {
   const {
     users, total, page, limit, loading, error,
-    setPage, refresh, createUser, unlockUser, changeRole,
+    setPage, refresh, createUser, unlockUser, changeRole, updateUser,
   } = useAdminUsers(20);
 
   const [showModal, setShowModal]     = useState(false);
+  const [userToEdit, setUserToEdit]   = useState<AuthUserListItem | null>(null);
   const [actionError, setActionError] = useState('');
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -170,6 +296,19 @@ export default function AdminUsersPage() {
     } catch (err) {
       setActionError(getErrorMessage(err, 'No se pudo cambiar el rol'));
     }
+  };
+
+  const handleToggleActive = async (userId: string, currentActivo: boolean) => {
+    setActionError('');
+    try {
+      await updateUser(userId, { activo: !currentActivo });
+    } catch (err) {
+      setActionError(getErrorMessage(err, `No se pudo ${currentActivo ? 'desactivar' : 'activar'} al usuario`));
+    }
+  };
+
+  const handleEditSubmit = async (userId: string, payload: AdminUpdateUserPayload) => {
+    await updateUser(userId, payload);
   };
 
   return (
@@ -261,16 +400,33 @@ export default function AdminUsersPage() {
                   <td className="admin-users__date">{formatDate(u.fecha_creacion)}</td>
                   <td className="admin-users__date">{formatDate(u.ultimo_acceso)}</td>
                   <td>
-                    {u.bloqueado && (
+                    <div className="admin-users__actions-cell">
                       <button
-                        className="admin-users__btn-unlock"
-                        onClick={() => handleUnlock(u.id)}
-                        title="Desbloquear cuenta (RN-32)"
+                        className="admin-users__action-btn admin-users__action-btn--edit"
+                        onClick={() => setUserToEdit(u)}
+                        title="Editar usuario"
                       >
-                        <Icon name="unlock" size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                        Desbloquear
+                        <Icon name="edit" size={14} />
                       </button>
-                    )}
+
+                      <button
+                        className={`admin-users__action-btn admin-users__action-btn--power admin-users__action-btn--power-${u.activo ? 'active' : 'inactive'}`}
+                        onClick={() => handleToggleActive(u.id, u.activo)}
+                        title={u.activo ? "Desactivar cuenta" : "Activar cuenta"}
+                      >
+                        <Icon name="power" size={14} />
+                      </button>
+
+                      {u.bloqueado && (
+                        <button
+                          className="admin-users__action-btn admin-users__action-btn--unlock"
+                          onClick={() => handleUnlock(u.id)}
+                          title="Desbloquear cuenta (RN-32)"
+                        >
+                          <Icon name="unlock" size={14} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -315,6 +471,15 @@ export default function AdminUsersPage() {
         <CreateUserModal
           onClose={() => setShowModal(false)}
           onSubmit={createUser}
+        />
+      )}
+
+      {/* Modal edición */}
+      {userToEdit && (
+        <EditUserModal
+          user={userToEdit}
+          onClose={() => setUserToEdit(null)}
+          onSubmit={handleEditSubmit}
         />
       )}
     </div>

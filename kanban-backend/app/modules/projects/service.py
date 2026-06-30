@@ -108,7 +108,7 @@ async def update_project(db, project_id: str, payload: ProjectUpdate, current_us
 
 async def delete_project(db, project_id: str, current_user: dict) -> dict:
     oid = to_object_id(project_id, "project_id", "Proyecto")
-    await ensure_project_access(db, oid, current_user, "Manager")
+    project = await ensure_project_access(db, oid, current_user, "Manager")
 
     # RN-15: eliminación en cascada de todo lo contenido.
     board_ids = [b["_id"] async for b in db.boards.find({"project_id": oid}, {"_id": 1})]
@@ -123,7 +123,7 @@ async def delete_project(db, project_id: str, current_user: dict) -> dict:
     await db.projects.delete_one({"_id": oid})
 
     await log_action(db, current_user.get("sub"), "eliminar_proyecto",
-                     f"Eliminó el proyecto {project_id}", project_id)
+                     f"Eliminó el proyecto '{project.get('name')}'", project_id)
     return {"message": "Proyecto eliminado exitosamente"}
 
 
@@ -132,7 +132,8 @@ async def add_member(db, project_id: str, payload: AddMemberRequest, current_use
     project = await ensure_project_access(db, oid, current_user, "Manager")
 
     target_oid = to_object_id(payload.user_id, "user_id", "Usuario")
-    if not await db.users.find_one({"_id": target_oid}):
+    target_user = await db.users.find_one({"_id": target_oid})
+    if not target_user:
         raise APIError(404, "Usuario no encontrado", "user_id")
 
     if any(str(m["user_id"]) == payload.user_id for m in project.get("members", [])):
@@ -143,7 +144,7 @@ async def add_member(db, project_id: str, payload: AddMemberRequest, current_use
         {"$push": {"members": {"user_id": target_oid, "rol": payload.rol}}},
     )
     await log_action(db, current_user.get("sub"), "cambiar_rol_proyecto",
-                     f"Agregó a {payload.user_id} como {payload.rol}", project_id)
+                     f"Agregó a {target_user.get('email')} como {payload.rol}", project_id)
     return {"message": "Miembro agregado exitosamente", "user_id": payload.user_id, "rol": payload.rol}
 
 
@@ -161,10 +162,13 @@ async def remove_member(db, project_id: str, target_user_id: str, current_user: 
     if target["rol"] == "Manager" and len(managers) <= 1:
         raise APIError(400, "El proyecto debe conservar al menos un Manager")
 
+    target_user = await db.users.find_one({"_id": to_object_id(target_user_id, "user_id", "Usuario")})
+    target_email = target_user.get("email") if target_user else target_user_id
+
     await db.projects.update_one(
         {"_id": oid},
         {"$pull": {"members": {"user_id": to_object_id(target_user_id, "user_id", "Usuario")}}},
     )
     await log_action(db, current_user.get("sub"), "cambiar_rol_proyecto",
-                     f"Eliminó al miembro {target_user_id}", project_id)
+                     f"Eliminó al miembro {target_email}", project_id)
     return {"message": "Miembro eliminado del proyecto exitosamente"}

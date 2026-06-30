@@ -3,6 +3,7 @@ import DashboardLayout from './shared/layouts/DashboardLayout';
 import { useAuth } from './shared/auth/AuthContext';
 import LoginPage from './features/auth/pages/LoginPage';
 import AdminUsersPage from './features/auth/pages/AdminUsersPage';
+import SystemLogsPage from './features/auth/pages/SystemLogsPage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
 import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
@@ -91,6 +92,7 @@ function App() {
       {/* Rutas exclusivas para Admin (RN-05, matriz de permisos) */}
       <Route element={<AdminLayout />}>
         <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/logs" element={<SystemLogsPage />} />
       </Route>
 
       {/* Fallback */}

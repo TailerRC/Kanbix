@@ -78,6 +78,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <div className="sidebar__section-label">Administración</div>
           <nav className="sidebar__nav">
             {renderItem({ to: '/admin/users', label: 'Usuarios', icon: 'users' })}
+            {renderItem({ to: '/admin/logs', label: 'Bitácora', icon: 'report-doc' })}
           </nav>
           <div className="sidebar__divider" />
         </>

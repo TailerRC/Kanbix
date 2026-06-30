@@ -10,8 +10,10 @@ import {
   adminCreateUser,
   adminListUsers,
   adminUnlockUser,
+  adminUpdateUser,
   type RegisterPayload,
   type UserListItem,
+  type AdminUpdateUserPayload,
 } from '../api/authApi';
 import { getErrorMessage } from '../../../shared/api/api';
 import type { RolGlobal } from '../../../shared/types';
@@ -28,6 +30,7 @@ interface UseAdminUsersReturn {
   createUser: (payload: RegisterPayload) => Promise<void>;
   unlockUser: (userId: string) => Promise<void>;
   changeRole: (userId: string, rol: RolGlobal) => Promise<void>;
+  updateUser: (userId: string, payload: AdminUpdateUserPayload) => Promise<void>;
 }
 
 export function useAdminUsers(initialLimit = 20): UseAdminUsersReturn {
@@ -93,8 +96,15 @@ export function useAdminUsers(initialLimit = 20): UseAdminUsersReturn {
     );
   }, []);
 
+  const updateUser = useCallback(async (userId: string, payload: AdminUpdateUserPayload) => {
+    const updated = await adminUpdateUser(userId, payload);
+    setUsers(prev =>
+      prev.map(u => u.id === userId ? updated : u)
+    );
+  }, []);
+
   return {
     users, total, page, limit, loading, error,
-    setPage, refresh, createUser, unlockUser, changeRole,
+    setPage, refresh, createUser, unlockUser, changeRole, updateUser,
   };
 }

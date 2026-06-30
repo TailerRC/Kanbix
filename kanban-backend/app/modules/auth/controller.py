@@ -5,6 +5,7 @@ from app.modules.auth.schemas import (
     ChangeRoleRequest,
     LoginRequest,
     RegisterRequest,
+    AdminUpdateUserRequest,
 )
 
 
@@ -42,4 +43,12 @@ async def unlock(db, target_id: str) -> dict:
 
 async def change_role(db, admin_id: str, target_id: str, payload: ChangeRoleRequest) -> dict:
     return await service.change_global_role(db, admin_id, target_id, payload.rol_global)
+
+
+async def update_user(db, admin_id: str, target_id: str, payload: AdminUpdateUserRequest) -> dict:
+    return await service.update_user_by_admin(db, admin_id, target_id, payload)
+
+
+async def get_audit_logs(db, page: int, limit: int) -> dict:
+    return await service.list_audit_logs(db, page, limit)
 

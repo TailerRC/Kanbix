@@ -32,6 +32,9 @@ from app.modules.auth.schemas import (
     UnlockResponse,
     UserListResponse,
     UserResponse,
+    AdminUpdateUserRequest,
+    UserListItem,
+    AuditLogListResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
@@ -167,3 +170,31 @@ async def admin_change_role(
     current=Depends(require_role(Role.ADMIN)),
 ):
     return await controller.change_role(get_database(), current.get("sub"), user_id, payload)
+
+
+@admin_router.put(
+    "/users/{user_id}",
+    response_model=UserListItem,
+    summary="Actualizar información completa del usuario por el administrador",
+    description="Permite modificar nombre, correo, estado activo/inactivo, contraseña y rol global (solo Admin).",
+)
+async def admin_update_user(
+    user_id: str,
+    payload: AdminUpdateUserRequest,
+    current=Depends(require_role(Role.ADMIN)),
+):
+    return await controller.update_user(get_database(), current.get("sub"), user_id, payload)
+
+
+@admin_router.get(
+    "/logs",
+    response_model=AuditLogListResponse,
+    summary="Obtener la bitácora de logs de auditoría del sistema",
+    description="Paginado. Solo accesible para administradores (RN-33)."
+)
+async def admin_get_logs(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    _=Depends(require_role(Role.ADMIN))
+):
+    return await controller.get_audit_logs(get_database(), page, limit)

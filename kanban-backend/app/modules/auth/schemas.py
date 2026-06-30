@@ -52,6 +52,21 @@ class ChangeRoleRequest(BaseModel):
     rol_global: RolGlobal
 
 
+class AdminUpdateUserRequest(BaseModel):
+    nombre_completo: Optional[str] = Field(None, min_length=1)
+    email: Optional[EmailStr] = None
+    activo: Optional[bool] = None
+    password: Optional[str] = None
+    rol_global: Optional[RolGlobal] = None
+
+    @field_validator("password")
+    @classmethod
+    def check_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            return _validate_password(v)
+        return v
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -143,3 +158,23 @@ class ChangeRoleResponse(BaseModel):
     message: str
     user_id: str
     rol_global: RolGlobal
+
+
+class AuditLogItem(BaseModel):
+    id: str
+    id_usuario: Optional[str] = None
+    accion: str
+    detalle: str = ""
+    id_recurso: Optional[str] = None
+    fecha: datetime
+    usuario_ejecutor_email: Optional[str] = None
+    usuario_ejecutor_nombre: Optional[str] = None
+    recurso_afectado_nombre: Optional[str] = None
+    recurso_afectado_tipo: Optional[str] = None
+
+
+class AuditLogListResponse(BaseModel):
+    total: int
+    page: int
+    limit: int
+    data: List[AuditLogItem]

@@ -214,7 +214,7 @@ export default function AdminProjectsPage() {
         createPortal(
           <div className="admin-projects__delete-overlay" onClick={() => setShowDeleteModal(false)}>
             <div className="admin-projects__delete-modal" onClick={(e) => e.stopPropagation()}>
-              <h3 className="admin-projects__delete-modal-title" style={{ color: '#ef4444' }}>
+              <h3 className="admin-projects__delete-modal-title" style={{ color: 'var(--color-error, #ef4444)' }}>
                 Eliminar Proyecto
               </h3>
               <p style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--color-text-secondary)' }}>
@@ -222,11 +222,11 @@ export default function AdminProjectsPage() {
               </p>
               <div style={{
                 padding: '10px 14px',
-                backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                borderLeft: '3px solid #ef4444',
+                backgroundColor: 'var(--color-error-bg)',
+                borderLeft: '3px solid var(--color-error, #ef4444)',
                 borderRadius: '4px',
                 fontSize: '0.8rem',
-                color: '#b91c1c',
+                color: 'var(--color-error, #ef4444)',
                 lineHeight: '1.4'
               }}>
                 Se eliminarán en cascada todos sus tableros, columnas, tareas, comentarios y sprints permanentemente de la base de datos.

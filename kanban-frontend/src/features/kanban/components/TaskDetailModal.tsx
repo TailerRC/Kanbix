@@ -222,16 +222,23 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           {/* ── RIGHT COLUMN ── */}
           <div className="k-modal-right">
 
-            {/* Status select */}
+            {/* PARTE 2A — PROBLEMA A:
+                El dropdown de estado solo muestra columnas del kanban (sin Backlog).
+                "Backlog" no es un estado de tarea — es la vista donde viven tareas sin sprint.
+                Se filtra por nombre para excluirlo explícitamente.
+                Al cambiar: PATCH al backend + mueve la card a la columna destino
+                (updateTaskOptimistic maneja ambas cosas en un solo paso). */}
             <div className="k-modal-field">
               <select
                 className="k-modal-select k-modal-status"
                 value={currentColId}
                 onChange={(e) => handleUpdate('status', { column_id: e.target.value })}
               >
-                {board.columns.filter(c => c.name.toLowerCase() !== 'backlog').map(col => (
-                  <option key={col.id} value={col.id}>{col.name}</option>
-                ))}
+                {board.columns
+                  .filter(c => c.name.toLowerCase() !== 'backlog')
+                  .map(col => (
+                    <option key={col.id} value={col.id}>{col.name}</option>
+                  ))}
               </select>
             </div>
 
@@ -351,13 +358,8 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     </div>
                   </div>
 
-                  {/* Sprint */}
-                  <div className="k-modal-detail-row">
-                    <span className="k-modal-detail-label">Sprint</span>
-                    <div className="k-modal-detail-value">
-                      <span className="k-empty-val">Sin sprint</span>
-                    </div>
-                  </div>
+                  {/* NOTA: Sprint ya está arriba (líneas 262-277) con selector funcional.
+                      Este bloque duplicado "Sin sprint" fue eliminado en PARTE 2B. */}
 
                   {/* Story points */}
                   <div className="k-modal-detail-row">

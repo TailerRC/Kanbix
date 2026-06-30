@@ -165,7 +165,10 @@ function BoardContent() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
 
-  const { project, board, activeSprint, loading, error, loadBoard, moveTaskOptimistic } = useBoard();
+  // CAMBIO (PARTE 1 — PASO 6): activeSprint ya NO controla la visibilidad del tablero.
+  // Se desestructura del contexto por si otros efectos secundarios lo usan, pero
+  // NO se usa para condicionar el render de columnas ni filtrar tareas.
+  const { project, board, loading, error, loadBoard, moveTaskOptimistic } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
   const [addingTaskColId, setAddingTaskColId] = useState<string | null>(null);
   const [activeCard, setActiveCard] = useState<UITaskCard | null>(null);
@@ -208,17 +211,15 @@ function BoardContent() {
   if (error)   return <div style={{ padding: '24px', color: 'var(--color-danger)' }}>{error}</div>;
   if (!project || !board) return null;
 
-  // ── Filtrar columna "Backlog" del Kanban: va a la vista /backlog ──────────
-  const kanbanColumnsRaw = board.columns.filter(
+  // CAMBIO (PARTE 1 — PASO 2 + PASO 3):
+  // Las columnas kanban son TODAS las del board excepto "backlog" (que es una vista separada).
+  // NO se filtra por sprint: todas las tareas del proyecto se muestran en su columna.
+  const kanbanColumns = board.columns.filter(
     (col) => col.name.toLowerCase() !== 'backlog'
   );
+  // ELIMINADO: filter(t => activeSprint && t.sprint_id === activeSprint.id)
 
-  // ── Solo mostrar tareas del sprint activo ──────────
-  const kanbanColumns = kanbanColumnsRaw.map(col => ({
-    ...col,
-    tasks: col.tasks.filter(t => activeSprint && t.sprint_id === activeSprint.id)
-  }));
-
+  // CAMBIO (PARTE 1 — PASO 4): el contador cuenta TODAS las tareas del proyecto (sin filtro de sprint)
   const totalTasks = kanbanColumns.reduce((acc, col) => acc + col.tasks.length, 0);
 
   // Grupos para la vista "Agrupar por"
@@ -242,27 +243,31 @@ function BoardContent() {
     renderGroups = [{ title: 'Sin padre (TBD)', columns: kanbanColumns }];
   }
 
+  // CAMBIO (PARTE 1 — PASO 1 + PASO 6):
+  // Se ELIMINA el bloque `if (!activeSprint)` que mostraba el mensaje de bloqueo.
+  // El tablero siempre renderiza el DndContext con las 4 columnas.
+  // El contenido del tablero ya NO es una variable condicional — se renderiza directamente.
 
+  return (
+    <div className="board-page">
+      <BoardHeader
+        projectName={project.name}
+        // CAMBIO (PASO 4): header muestra "[Nombre proyecto] — Tablero Principal"
+        boardName={board.name}
+        taskCount={totalTasks}
+        groupBy={groupBy}
+        onGroupByChange={setGroupBy}
+        onNewTask={() => {
+          // CAMBIO: el botón "Nueva tarea" ya no depende de activeSprint.
+          // Abre el InlineTaskForm en la primera columna disponible del kanban.
+          if (kanbanColumns.length > 0) {
+            setAddingTaskColId(kanbanColumns[0].id);
+          }
+        }}
+        projectId={projectId}
+      />
 
-  let boardContent = null;
-  if (!activeSprint) {
-    boardContent = (
-      <div className="board-page__no-sprint">
-        <Icon name="inbox" size={48} />
-        <h2>No hay ningún sprint activo</h2>
-        <p>Para ver tareas en el tablero, inicia un sprint desde el Backlog.</p>
-        <button className="k-btn-primary" onClick={() => navigate(`/proyectos/${projectId}/backlog`)}>
-          Ir al Backlog
-        </button>
-        {addingTaskColId && (
-          <div style={{ marginTop: 24, width: '100%', maxWidth: 400, textAlign: 'left' }}>
-            <InlineTaskForm columnId={addingTaskColId} onClose={() => setAddingTaskColId(null)} />
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    boardContent = (
+      {/* CAMBIO (PASO 1): DndContext se renderiza siempre, sin condición de sprint */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -294,6 +299,8 @@ function BoardContent() {
                             {col.name}
                             <span className="kcolumn__count">{col.tasks.length}</span>
                           </span>
+                          {/* CAMBIO (PASO 5): botón "+" DENTRO de cada columna,
+                              abre InlineTaskForm dentro de esa columna */}
                           <button
                             className="kcolumn__add"
                             aria-label="Agregar tarea"
@@ -312,6 +319,8 @@ function BoardContent() {
                               onOpenDetail={() => setEditingTaskId(card.id)}
                             />
                           ))}
+                          {/* CAMBIO (PASO 5): InlineTaskForm se renderiza DENTRO de la
+                              columna (no suelto en pantalla) cuando se hace clic en "+" */}
                           {addingTaskColId === col.id && (
                             <InlineTaskForm
                               columnId={col.id}
@@ -334,29 +343,6 @@ function BoardContent() {
           ) : null}
         </DragOverlay>
       </DndContext>
-    );
-  }
-
-  return (
-    <div className="board-page">
-      <BoardHeader
-        projectName={project.name}
-        boardName={board.name}
-        taskCount={totalTasks}
-        groupBy={groupBy}
-        onGroupByChange={setGroupBy}
-        onNewTask={() => {
-          if (activeSprint && kanbanColumns.length > 0) {
-            setAddingTaskColId(kanbanColumns[0].id);
-          } else {
-            const backlogCol = board.columns.find(c => c.name.toLowerCase() === 'backlog');
-            if (backlogCol) setAddingTaskColId(backlogCol.id);
-          }
-        }}
-        projectId={projectId}
-      />
-
-      {boardContent}
 
       {editingTaskId && (
         <TaskDetailModal taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />

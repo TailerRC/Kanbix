@@ -29,6 +29,9 @@ Gráfico que compara el progreso real de un sprint contra la línea ideal de tra
 ### Change Streams
 Funcionalidad de MongoDB que permite escuchar cambios en tiempo real sobre colecciones (`watch()`). En Kanbix, se usa en el Módulo 5 para detectar inserciones/actualizaciones en `tasks` y propagar eventos al frontend via WebSocket.
 
+### Cambio de Contraseña Forzado
+Mecanismo de seguridad Enterprise (RN-31): todo usuario debe cambiar su contraseña en el primer inicio de sesión. Las contraseñas expiran cada 90 días. No se puede reutilizar ninguna de las últimas 5 contraseñas.
+
 ### Carga de Trabajo (Workload)
 Total de story points asignados a cada miembro del equipo en un proyecto. Se consulta via `GET /projects/{id}/workload`.
 
@@ -128,14 +131,30 @@ Librería React para gráficos SVG declarativos. Se usa en el Módulo 6 para ren
 Token de larga duración (7 días) usado para renovar el `access_token` sin que el usuario tenga que volver a hacer login. Se invalida en logout (RN-05).
 ### Rol
 
-Conjunto de permisos dentro de un proyecto. Valores: **Manager**, **Developer**, **Viewer**. Los roles determinan qué acciones puede realizar un miembro (crear tareas, mover columnas, eliminar proyectos, etc.).
+El sistema distingue entre **roles globales** (asignados por Admin al crear la cuenta) y **roles por proyecto** (asignados por un Manager dentro de cada proyecto).
 
-- **Manager** — administra el proyecto: gestiona miembros, roles, sprints, columnas, tareas, dependencias y reportes. Corresponde al rol que creó el proyecto.
+#### Roles Globales (asignados por Admin — RN-05, RN-07)
+
+| Rol | Descripción |
+|:----|:------------|
+| **Admin** | Crea usuarios, asigna roles globales, desbloquea cuentas, supervisa todo el sistema. |
+| **Manager** | Puede crear proyectos. Es el usuario con capacidades de gestión. |
+| **Developer** | Usuario estándar. No puede crear proyectos, solo participar en los que se le invite. |
+
+#### Roles por Proyecto (asignados por Manager dentro del proyecto)
+
+- **Manager** — administra el proyecto: gestiona miembros, roles, sprints, columnas, tareas, dependencias y reportes. Corresponde al responsable del proyecto (RN-11).
 - **Developer** — ejecuta tareas asignadas y las mueve entre columnas del tablero.
 - **Viewer** — acceso de solo lectura a tableros, tareas y reportes.
 
 ### Admin
-Usuario con privilegios globales sobre todo el sistema. Puede crear proyectos en cualquier contexto, asignar y modificar roles de cualquier usuario, y acceder a todos los reportes. No es un rol asignable por proyecto — es un nivel superior al sistema de roles por proyecto.
+Usuario con privilegios globales sobre todo el sistema. Creación de usuarios, asignación de roles globales, desbloqueo de cuentas, acceso total a proyectos y reportes. No es un rol asignable por proyecto — es un nivel superior al sistema de roles por proyecto.
+
+### Administración de Usuarios
+Gestión de cuentas de usuario exclusiva del Admin: crear cuentas, asignar rol global inicial (Admin, Manager o Developer), desbloquear cuentas bloqueadas por intentos fallidos. No existe auto-registro público en modo Enterprise (RN-05, RN-34).
+
+### Auditoría (Log)
+Registro inmutable de acciones sensibles: creación de usuarios, cambios de rol global, creación/eliminación de proyectos, cambios de roles por proyecto (RN-33). Implementación técnica pendiente de definición.
 
 ---
 

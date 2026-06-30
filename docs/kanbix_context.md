@@ -29,7 +29,7 @@ Diseñar y desarrollar Kanbix aplicando SDD como metodología central, donde esp
 
 Sistema web de gestión ágil de proyectos con tablero Kanban, planificación de sprints, asignaciones, alertas en tiempo real y dashboard de reportes. Construido bajo SDD sobre React + Vite + TypeScript (frontend), FastAPI + Python (backend) y MongoDB Atlas (base de datos).
 
-**Excluye:** integraciones externas (Jira, GitHub), facturación, despliegue en producción empresarial.
+**Excluye:** integraciones externas (Jira, GitHub), facturación.
 
 ---
 
@@ -78,7 +78,7 @@ Solo el backend se conecta a MongoDB Atlas usando **Motor** (driver async). El f
 
 | Módulo | Responsable | Descripción |
 |--------|-------------|-------------|
-| 1 — Autenticación y Usuarios | Rodrigo Chacón | Registro/login con JWT + refresh tokens, middlewares de seguridad, perfil de usuario. Base del sistema, debe entregarse primero. |
+| 1 — Autenticación y Usuarios | Rodrigo Chacón | Login con JWT + refresh tokens, administración de usuarios (Enterprise: cuentas creadas por Admin), middlewares de seguridad, perfil de usuario. Base del sistema, debe entregarse primero. |
 | 2 — Proyectos y Equipos | Piero Villón | CRUD de proyectos, invitación de miembros por email, roles (Manager, Developer, Viewer), gestión de sprints. |
 | 3 — Tablero Kanban y Tareas | Gianfranco Caballero | Columnas personalizables, tareas con prioridad, drag & drop (dnd-kit), filtros y búsqueda. Único módulo fullstack. |
 | 4 — Planificación y Asignaciones | Jerzy Carrasco | Asignación de tareas a miembros, planificación de sprints, backlog, dependencias entre tareas con detección de ciclos. |

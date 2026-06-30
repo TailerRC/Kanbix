@@ -6,16 +6,27 @@ Fuente única de verdad para autorización en endpoints. Todos los permisos deri
 
 ## Roles
 
-| Rol | Ámbito | Descripción |
-|:----|:-------|:------------|
-| **Admin** | Global | Superadministrador del sistema. No está asociado a un proyecto específico. Puede ejecutar cualquier acción en cualquier proyecto. |
-| **Manager** | Por proyecto | Usuario que creó el proyecto o fue asignado con ese rol. Administra el proyecto: miembros, sprints, columnas, tareas y reportes. |
-| **Developer** | Por proyecto | Ejecuta tareas que le son asignadas y las mueve entre columnas del tablero. |
-| **Viewer** | Por proyecto | Acceso de solo lectura. Puede ver tableros, tareas y reportes pero no crear, editar ni eliminar nada. |
+El sistema distingue entre **roles globales** (asignados por un Admin al crear la cuenta, determinan qué puede hacer el usuario en el sistema) y **roles por proyecto** (asignados por un Manager dentro de cada proyecto, determinan los permisos específicos en ese proyecto).
+
+### Roles Globales
+
+| Rol | Descripción |
+|:----|:------------|
+| **Admin** | Crea usuarios, asigna roles globales, desbloquea cuentas. Supervisa todo el sistema. No es un rol dentro de proyectos — Admin puede acceder a cualquier proyecto. |
+| **Manager** | Puede crear proyectos (RN-10). Gestiona los proyectos que crea o donde tiene rol Manager por proyecto. |
+| **Developer** | Usuario estándar. No puede crear proyectos. Solo participa en proyectos donde se le ha invitado con un rol por proyecto. |
+
+### Roles por Proyecto
+
+| Rol | Descripción |
+|:----|:------------|
+| **Manager** | Administra el proyecto: miembros, roles por proyecto, sprints, columnas, tareas y reportes. |
+| **Developer** | Ejecuta tareas asignadas y las mueve entre columnas del tablero. |
+| **Viewer** | Acceso de solo lectura a tableros, tareas y reportes. |
 
 **Jerarquía (RN-06):** `Admin > Manager > Developer > Viewer`
 
-Un rol superior hereda todos los permisos de los roles inferiores. Por ejemplo, Admin puede hacer todo lo que Manager, Developer y Viewer pueden.
+La jerarquía aplica tanto a roles globales como a roles por proyecto. Un rol superior hereda todos los permisos de los roles inferiores. Por ejemplo, Admin global puede hacer todo lo que Manager, Developer y Viewer pueden, en cualquier proyecto.
 
 ---
 
@@ -72,6 +83,11 @@ Un rol superior hereda todos los permisos de los roles inferiores. Por ejemplo, 
 | 40 | Ver métricas personales | ✅ | ✅ | ✅ | ✅ | RN-30 |
 | 41 | Ver rendimiento del equipo | ✅ | ✅ | ❌ | ❌ | RF83, RN-30 |
 | 42 | Exportar reporte a PDF | ✅ | ✅ | ✅ | ✅ | RF84 |
+| | **Administración de Usuarios** | | | | | |
+| 47 | Crear usuario | ✅ | ❌ | ❌ | ❌ | RN-05 |
+| 48 | Desbloquear cuenta de usuario | ✅ | ❌ | ❌ | ❌ | RN-32 |
+| 49 | Cambiar rol global de un usuario | ✅ | ❌ | ❌ | ❌ | RN-07 |
+| 50 | Ver lista de usuarios del sistema | ✅ | ❌ | ❌ | ❌ | — |
 | | **Notificaciones** | | | | | |
 | 43 | Ver bandeja de notificaciones | ✅ | ✅ | ✅ | ✅ | RF73 |
 | 44 | Marcar notificación como leída | ✅ | ✅ | ✅ | ✅ | RF74 |
@@ -82,8 +98,8 @@ Un rol superior hereda todos los permisos de los roles inferiores. Por ejemplo, 
 
 ## Notas
 
-1. **Manager** — solo sobre proyectos donde tiene ese rol. No puede modificar proyectos de otros Managers.
-2. **Admin** — puede asignar/cambiar roles de cualquier usuario en cualquier proyecto (RN-07). Manager solo puede hacerlo dentro de su propio proyecto.
+1. **Manager** — las acciones de Proyectos (crear, editar, eliminar) verifican el **rol global** del usuario. Las acciones dentro de un proyecto verifican el **rol por proyecto**.
+2. **Admin** — puede ejecutar cualquier acción en cualquier proyecto, independientemente del rol por proyecto. También gestiona usuarios y roles globales (RN-05, RN-07).
 3. **Developer** — solo puede editar tareas que le fueron asignadas.
 4. **Developer** — solo puede mover tareas que le fueron asignadas. Un Manager puede mover cualquier tarea del proyecto.
 5. Acción definida en contratos API pero sin RN/RF explícito. Se considera implícita por el rol Manager.
@@ -97,10 +113,14 @@ Cada endpoint en los contratos API debe validar el permiso según esta tabla:
 | Método | Ruta | Rol mínimo |
 |:------:|:-----|:----------:|
 | GET | /api/v1/auth/me | Usuario autenticado |
-| POST | /api/v1/auth/register | Público |
+| POST | /api/v1/auth/register | Admin (Enterprise — auto-registro deshabilitado) |
 | POST | /api/v1/auth/login | Público |
 | POST | /api/v1/auth/refresh | Público (requiere refresh_token) |
 | POST | /api/v1/auth/logout | Usuario autenticado |
+| POST | /api/v1/admin/users | Admin |
+| GET | /api/v1/admin/users | Admin |
+| POST | /api/v1/admin/users/{uid}/unlock | Admin |
+| PUT | /api/v1/admin/users/{uid}/role | Admin |
 | POST | /api/v1/projects | Admin, Manager |
 | GET | /api/v1/projects | Usuario autenticado (miembro) |
 | GET | /api/v1/projects/{id} | Viewer+ (miembro del proyecto) |

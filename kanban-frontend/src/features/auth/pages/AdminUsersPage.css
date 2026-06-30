@@ -1,0 +1,522 @@
+/* ============================================================
+   AdminUsersPage.css — Gestión de Usuarios
+   Diseño alineado con diseno_visual.md:
+   - Fondo: #F4F5F7  Surface: #FFFFFF  Texto: #111827
+   - Acción primaria: #111827  Marca/acento: #6366F1
+   - Border-radius: cards 16px, botones pill 999px
+   - Sombra: 0 1px 3px rgba(0,0,0,0.06)
+   - Fuente: Plus Jakarta Sans
+   ============================================================ */
+
+/* ── Contenedor principal ── */
+.admin-users {
+  padding: 2rem 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', system-ui, sans-serif);
+  animation: au-fadeUp 0.3s ease;
+}
+
+@keyframes au-fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ── */
+.admin-users__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-users__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.admin-users__subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+  margin: 0.25rem 0 0;
+  font-weight: 400;
+}
+
+.admin-users__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Botón actualizar (icon only) */
+.admin-users__btn-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface, #FFFFFF);
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.admin-users__btn-refresh:hover:not(:disabled) {
+  background: var(--color-bg, #F4F5F7);
+  color: var(--color-text-primary, #111827);
+  border-color: var(--color-text-primary, #111827);
+}
+
+.admin-users__btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Botón "Nuevo usuario" — primario pill */
+.admin-users__btn-create {
+  padding: 0.6rem 1.375rem;
+  background: var(--color-primary, #111827);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  font-family: inherit;
+}
+
+.admin-users__btn-create:hover {
+  background: var(--color-primary-hover, #1F2937);
+  transform: translateY(-1px);
+}
+
+/* ── Error banner ── */
+.admin-users__error {
+  padding: 0.875rem 1rem;
+  background: var(--color-error-bg, #FEE2E2);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--color-error, #DC2626);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ── Leyenda de estados ── */
+.admin-users__legend {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.admin-users__legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ── Dots de estado ── */
+.admin-users__dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.admin-users__dot--active   { background: var(--color-success, #16A34A); }
+.admin-users__dot--locked   { background: var(--color-warning, #D97706); }
+.admin-users__dot--inactive { background: var(--color-text-muted, #9CA3AF); }
+
+/* ── Tabla container (surface card) ── */
+.admin-users__table-wrap {
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-md, 16px);
+  overflow: auto;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.admin-users__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+/* Thead */
+.admin-users__table thead {
+  background: var(--color-bg, #F4F5F7);
+}
+
+.admin-users__table th {
+  padding: 0.875rem 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6B7280);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  white-space: nowrap;
+}
+
+/* Tbody */
+.admin-users__table td {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  color: var(--color-text-primary, #111827);
+  vertical-align: middle;
+}
+
+.admin-users__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-users__table tbody tr {
+  transition: background 0.12s;
+}
+
+.admin-users__table tbody tr:hover {
+  background: var(--color-bg, #F4F5F7);
+}
+
+/* Fila bloqueada — leve tinte ámbar */
+.admin-users__row--locked {
+  background: var(--color-warning-bg, #FEF3C7);
+}
+.admin-users__row--locked:hover {
+  background: #fde68a !important;
+}
+
+/* Cells específicos */
+.admin-users__name {
+  font-weight: 600;
+  color: var(--color-text-primary, #111827) !important;
+  white-space: nowrap;
+}
+
+.admin-users__email {
+  color: var(--color-text-secondary, #6B7280) !important;
+  font-size: 0.8125rem !important;
+}
+
+.admin-users__date {
+  color: var(--color-text-muted, #9CA3AF) !important;
+  font-size: 0.8125rem !important;
+  white-space: nowrap;
+}
+
+/* ── Badge de rol (pill) ── */
+.admin-users__badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+  color: var(--badge-color);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 28%, transparent);
+}
+
+/* ── Select de rol (inline) ── */
+.admin-users__role-select {
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--color-border, #E5E7EB);
+  background: var(--color-surface, #FFFFFF);
+  color: var(--color-text-primary, #111827);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  font-family: inherit;
+}
+
+.admin-users__role-select:hover {
+  border-color: var(--color-primary, #111827);
+}
+
+.admin-users__role-select:focus {
+  border-color: var(--color-brand, #6366F1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* ── Botón Desbloquear ── */
+.admin-users__btn-unlock {
+  padding: 0.3rem 0.875rem;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-warning-bg, #FEF3C7);
+  color: var(--color-warning, #D97706);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.admin-users__btn-unlock:hover {
+  background: #fde68a;
+  border-color: var(--color-warning, #D97706);
+}
+
+/* ── Loading ── */
+.admin-users__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.admin-users__spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2.5px solid var(--color-border, #E5E7EB);
+  border-top-color: var(--color-brand, #6366F1);
+  border-radius: 50%;
+  animation: au-spin 0.75s linear infinite;
+}
+
+@keyframes au-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Estado vacío ── */
+.admin-users__empty {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--color-text-muted, #9CA3AF);
+  font-size: 0.9rem;
+}
+
+/* ── Paginación ── */
+.admin-users__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.admin-users__page-btn {
+  padding: 0.5rem 1.125rem;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface, #FFFFFF);
+  color: var(--color-text-primary, #111827);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.admin-users__page-btn:hover:not(:disabled) {
+  background: var(--color-primary, #111827);
+  color: #FFFFFF;
+  border-color: var(--color-primary, #111827);
+}
+
+.admin-users__page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-users__page-info {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* ══════════════════════════════════
+   Modal de creación de usuario
+   ══════════════════════════════════ */
+
+.admin-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: au-fadeIn 0.2s ease;
+}
+
+@keyframes au-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.admin-modal {
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-lg, 24px);
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-modal, 0 10px 25px rgba(0,0,0,0.12));
+  animation: au-slideUp 0.25s ease;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', system-ui, sans-serif);
+}
+
+@keyframes au-slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.admin-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.admin-modal__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.admin-modal__close {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border, #E5E7EB);
+  background: var(--color-bg, #F4F5F7);
+  color: var(--color-text-secondary, #6B7280);
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-modal__close:hover {
+  background: var(--color-border, #E5E7EB);
+  color: var(--color-text-primary, #111827);
+}
+
+.admin-modal__error {
+  padding: 0.75rem 1rem;
+  background: var(--color-error-bg, #FEE2E2);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--color-error, #DC2626);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.admin-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-modal__field label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6B7280);
+  font-weight: 500;
+}
+
+.admin-modal__field input,
+.admin-modal__field select {
+  padding: 0.65rem 0.875rem;
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--color-text-primary, #111827);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.admin-modal__field input::placeholder {
+  color: var(--color-text-muted, #9CA3AF);
+}
+
+.admin-modal__field input:focus,
+.admin-modal__field select:focus {
+  border-color: var(--color-brand, #6366F1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.admin-modal__field small {
+  color: var(--color-text-muted, #9CA3AF);
+  font-size: 0.78rem;
+}
+
+.admin-modal__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* Botón cancelar — outline */
+.admin-modal__btn--cancel {
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-pill, 999px);
+  background: transparent;
+  color: var(--color-text-primary, #111827);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.admin-modal__btn--cancel:hover {
+  background: var(--color-bg, #F4F5F7);
+}
+
+/* Botón submit — primario pill */
+.admin-modal__btn--submit {
+  padding: 0.625rem 1.5rem;
+  background: var(--color-primary, #111827);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  font-family: inherit;
+}
+
+.admin-modal__btn--submit:hover:not(:disabled) {
+  background: var(--color-primary-hover, #1F2937);
+  transform: translateY(-1px);
+}
+
+.admin-modal__btn--submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

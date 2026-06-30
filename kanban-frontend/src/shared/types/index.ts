@@ -1,6 +1,6 @@
 /** Tipos compartidos del dominio Kanbix (alineados con los contratos del backend). */
 
-export type RolGlobal = 'Admin' | 'Manager' | 'Developer';
+export type RolGlobal = 'Admin' | 'Manager' | 'Developer' | 'Viewer';
 export type RolProyecto = 'Manager' | 'Developer' | 'Viewer';
 export type Prioridad = 'Baja' | 'Media' | 'Alta' | 'Crítica';
 

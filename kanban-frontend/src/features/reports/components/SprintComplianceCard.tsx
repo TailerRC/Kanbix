@@ -1,3 +1,4 @@
+import Icon from '../../../shared/components/Icon';
 import './SprintComplianceCard.css';
 
 export default function SprintComplianceCard() {
@@ -25,7 +26,8 @@ export default function SprintComplianceCard() {
 
       <div className="sprint-compliance__trend">
         <span className="sprint-compliance__trend-badge">
-          ↑ +15%
+          <Icon name="trend-up" size={13} strokeWidth={2.2} />
+          +15%
         </span>
         <span className="sprint-compliance__trend-text">
           vs. sprint anterior

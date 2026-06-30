@@ -30,16 +30,14 @@
 }
 
 .sidebar__logo-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-light));
-  border-radius: var(--radius-sm);
+  width: 38px;
+  height: 38px;
+  background: var(--color-primary);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  font-weight: var(--fw-extrabold);
-  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -112,7 +110,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  color: inherit;
+}
+
+.sidebar__nav-label {
+  flex: 1;
 }
 
 .sidebar__nav-badge {
@@ -150,29 +152,37 @@
   padding: 0 12px;
 }
 
-/* ---- CTA Card ---- */
+/* ---- CTA Card (patrón "Build future wealth" de la referencia) ---- */
 .sidebar__cta {
   margin: 16px 14px;
   padding: 20px 16px;
-  background: linear-gradient(135deg, #F0F0FF 0%, #E8E8FF 100%);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   text-align: center;
   position: relative;
   overflow: hidden;
 }
 
 .sidebar__cta-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-  display: block;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-light));
+  color: #FFFFFF;
 }
 
 .sidebar__cta-text {
   font-size: var(--fs-label);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
-  line-height: 1.5;
-  margin-bottom: 12px;
+  line-height: 1.45;
+  margin-bottom: 14px;
 }
 
 .sidebar__cta-btn {
@@ -230,16 +240,13 @@
   .sidebar__logo-text,
   .sidebar__section-label,
   .sidebar__cta,
-  .sidebar__nav-item span,
+  .sidebar__nav-label,
   .sidebar__nav-badge {
     display: none;
   }
   .sidebar__nav-item {
     justify-content: center;
     padding: 12px;
-  }
-  .sidebar__logout-btn span {
-    display: none;
   }
   .sidebar__logout-btn {
     justify-content: center;
@@ -257,7 +264,7 @@
   .sidebar--open .sidebar__logo-text,
   .sidebar--open .sidebar__section-label,
   .sidebar--open .sidebar__cta,
-  .sidebar--open .sidebar__nav-item span,
+  .sidebar--open .sidebar__nav-label,
   .sidebar--open .sidebar__nav-badge {
     display: initial;
   }

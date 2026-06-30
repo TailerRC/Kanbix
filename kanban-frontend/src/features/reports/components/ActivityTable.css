@@ -55,10 +55,15 @@
   white-space: nowrap;
 }
 
+.activity-table__table th .th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .activity-table__table th .sort-icon {
-  margin-left: 4px;
-  font-size: 10px;
-  opacity: 0.5;
+  color: var(--color-text-muted);
+  opacity: 0.55;
 }
 
 .activity-table__table td {

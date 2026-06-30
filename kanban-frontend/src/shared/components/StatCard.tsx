@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import './StatCard.css';
 
 interface StatCardProps {
@@ -10,6 +11,11 @@ interface StatCardProps {
   accentColor: string;
 }
 
+/**
+ * Stat card (fila superior del dashboard, estilo Finova):
+ * label · número grande · pill de tendencia + "vs. semana pasada" y
+ * una barra vertical redondeada a la derecha con un chip de porcentaje.
+ */
 export default function StatCard({
   label,
   value,
@@ -19,42 +25,31 @@ export default function StatCard({
   percentage,
   accentColor,
 }: StatCardProps) {
-  const radius = 20;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
-
   return (
     <div className="stat-card">
       <div className="stat-card__info">
         <span className="stat-card__label">{label}</span>
         <span className="stat-card__value">{value}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="stat-card__trend-row">
           <span className={`stat-card__trend stat-card__trend--${trendDirection}`}>
-            {trendDirection === 'up' ? '↑' : '↓'} {trend}
+            <Icon name={trendDirection === 'up' ? 'trend-up' : 'trend-down'} size={13} strokeWidth={2.2} />
+            {trend}
           </span>
           <span className="stat-card__trend-label">{trendLabel}</span>
         </div>
       </div>
 
-      <div className="stat-card__indicator">
-        <svg viewBox="0 0 48 48">
-          <circle
-            className="stat-card__indicator-bg"
-            cx="24"
-            cy="24"
-            r={radius}
-          />
-          <circle
-            className="stat-card__indicator-fill"
-            cx="24"
-            cy="24"
-            r={radius}
-            stroke={accentColor}
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-          />
-        </svg>
-        <span className="stat-card__indicator-text">{percentage}%</span>
+      {/* Barra vertical con chip de porcentaje */}
+      <div
+        className="stat-card__gauge"
+        style={{ ['--accent' as string]: accentColor }}
+      >
+        <div
+          className="stat-card__gauge-fill"
+          style={{ height: `${Math.min(percentage, 100)}%` }}
+        >
+          <span className="stat-card__gauge-chip">{percentage}%</span>
+        </div>
       </div>
     </div>
   );

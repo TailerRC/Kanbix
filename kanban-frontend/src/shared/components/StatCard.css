@@ -40,13 +40,20 @@
   letter-spacing: -0.02em;
 }
 
+.stat-card__trend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
 .stat-card__trend {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 8px;
   font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   padding: 3px 8px;
   border-radius: var(--radius-pill);
 }
@@ -64,43 +71,38 @@
 .stat-card__trend-label {
   font-size: var(--fs-caption);
   color: var(--color-text-muted);
-  margin-top: 2px;
 }
 
-/* ---- Mini circular indicator ---- */
-.stat-card__indicator {
+/* ---- Barra vertical con chip de porcentaje (estilo Finova) ---- */
+.stat-card__gauge {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 30px;
+  height: 64px;
   flex-shrink: 0;
-}
-
-.stat-card__indicator svg {
-  width: 52px;
-  height: 52px;
-  transform: rotate(-90deg);
-}
-
-.stat-card__indicator-bg {
-  fill: none;
-  stroke: var(--color-bg);
-  stroke-width: 4;
-}
-
-.stat-card__indicator-fill {
-  fill: none;
-  stroke-width: 4;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1s ease;
-}
-
-.stat-card__indicator-text {
-  position: absolute;
-  inset: 0;
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--accent) 16%, transparent);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.stat-card__gauge-fill {
+  position: relative;
+  width: 100%;
+  min-height: 22px;
+  background-color: var(--accent);
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: flex-end;
   justify-content: center;
-  font-size: 11px;
+  padding-bottom: 5px;
+  transition: height 0.8s ease;
+}
+
+.stat-card__gauge-chip {
+  font-size: 10px;
   font-weight: var(--fw-bold);
-  color: var(--color-text-secondary);
+  color: #FFFFFF;
+  line-height: 1;
 }

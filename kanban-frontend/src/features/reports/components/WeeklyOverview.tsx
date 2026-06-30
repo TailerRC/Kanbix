@@ -6,8 +6,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  type TooltipProps,
 } from 'recharts';
+import Icon from '../../../shared/components/Icon';
 import './WeeklyOverview.css';
 
 const weeklyData = [
@@ -26,7 +26,20 @@ const legendItems = [
   { label: 'En progreso', color: '#F59E0B' },
 ];
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+interface TooltipEntry {
+  dataKey?: string | number;
+  color?: string;
+  name?: string | number;
+  value?: number;
+}
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload) return null;
 
   return (
@@ -63,7 +76,8 @@ export default function WeeklyOverview() {
             ))}
           </div>
           <button className="weekly-overview__filter">
-            Semanal ▾
+            Semanal
+            <Icon name="chevron-down" size={15} />
           </button>
         </div>
       </div>
@@ -76,6 +90,18 @@ export default function WeeklyOverview() {
             barCategoryGap="20%"
             barGap={3}
           >
+            <defs>
+              <pattern
+                id="wo-stripes"
+                patternUnits="userSpaceOnUse"
+                width="6"
+                height="6"
+                patternTransform="rotate(45)"
+              >
+                <rect width="6" height="6" fill="#F59E0B" opacity="0.18" />
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#F59E0B" strokeWidth="3" />
+              </pattern>
+            </defs>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="#E5E7EB"
@@ -110,7 +136,9 @@ export default function WeeklyOverview() {
             <Bar
               dataKey="enProgreso"
               name="En progreso"
-              fill="#F59E0B"
+              fill="url(#wo-stripes)"
+              stroke="#F59E0B"
+              strokeWidth={1}
               radius={[6, 6, 0, 0]}
               maxBarSize={28}
             />

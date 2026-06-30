@@ -1,3 +1,4 @@
+import Icon from '../../../shared/components/Icon';
 import './ActivityTable.css';
 
 interface ActivityRow {
@@ -64,7 +65,8 @@ export default function ActivityTable() {
       <div className="activity-table__header">
         <h2 className="activity-table__title">Historial de Actividad</h2>
         <button className="activity-table__filter">
-          Semanal ▾
+          Semanal
+          <Icon name="chevron-down" size={15} />
         </button>
       </div>
 
@@ -72,11 +74,11 @@ export default function ActivityTable() {
         <table className="activity-table__table">
           <thead>
             <tr>
-              <th>ID <span className="sort-icon">↕</span></th>
-              <th>Fecha <span className="sort-icon">↕</span></th>
-              <th>Tipo de evento <span className="sort-icon">↕</span></th>
-              <th>Estado <span className="sort-icon">↕</span></th>
-              <th>Responsable <span className="sort-icon">↕</span></th>
+              <th><span className="th-content">ID <Icon name="chevrons" size={14} className="sort-icon" /></span></th>
+              <th><span className="th-content">Fecha <Icon name="chevrons" size={14} className="sort-icon" /></span></th>
+              <th><span className="th-content">Tipo de evento <Icon name="chevrons" size={14} className="sort-icon" /></span></th>
+              <th><span className="th-content">Estado <Icon name="chevrons" size={14} className="sort-icon" /></span></th>
+              <th><span className="th-content">Responsable <Icon name="chevrons" size={14} className="sort-icon" /></span></th>
             </tr>
           </thead>
           <tbody>

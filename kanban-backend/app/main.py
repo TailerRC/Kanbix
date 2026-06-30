@@ -60,6 +60,9 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url, "http://localhost:5173"],
+    # Permite cualquier puerto de localhost/127.0.0.1 en desarrollo (Vite puede
+    # cambiar de puerto si el 5173 está ocupado).
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

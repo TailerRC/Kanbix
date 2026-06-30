@@ -521,7 +521,7 @@
 .admin-modal__btn--submit {
   padding: 0.625rem 1.5rem;
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   border: none;
   border-radius: var(--radius-pill, 999px);
   font-size: 0.875rem;

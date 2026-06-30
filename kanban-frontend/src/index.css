@@ -31,6 +31,7 @@ html {
   --color-text-primary: #111827;
   --color-text-secondary: #6B7280;
   --color-text-muted: #9CA3AF;
+  --color-primary-text: #FFFFFF;
 
   /* Semánticos */
   --color-error: #DC2626;
@@ -116,6 +117,7 @@ html {
   --color-primary: #F8FAFC;
   --color-primary-hover: #E2E8F0;
   --color-brand: #818CF8;
+  --color-primary-text: #0F172A;
 
   /* Semánticos oscuros con fondos opacos y mayor contraste */
   --color-error-bg: rgba(220, 38, 38, 0.15);
@@ -283,6 +285,7 @@ a:hover {
   border: none;
   transition: all var(--transition-fast);
   white-space: nowrap;
+  color: var(--color-text-primary);
 }
 
 .btn:active {
@@ -291,7 +294,7 @@ a:hover {
 
 .btn--primary {
   background-color: var(--color-primary);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
 }
 
 .btn--primary:hover {

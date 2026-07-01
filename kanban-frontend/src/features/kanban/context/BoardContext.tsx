@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { getErrorMessage } from '../../../shared/api/api';
 import type { BoardDetail, Project, TaskCard } from '../../../shared/types';
 import { getProject } from '../../projects/api/projectsApi';
@@ -21,7 +21,8 @@ interface BoardContextValue {
     title: string,
     priority: string,
     assignee_id?: string,
-    due_date?: string
+    due_date?: string,
+    sprint_id?: string | null
   ) => Promise<void>;
   updateTaskOptimistic: (taskId: string, updates: Partial<TaskCard> & { column_id?: string }) => Promise<void>;
 }
@@ -124,7 +125,8 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     title: string,
     priority: string,
     assignee_id?: string,
-    due_date?: string
+    due_date?: string,
+    sprint_id?: string | null
   ) => {
     if (!board) return;
 
@@ -136,6 +138,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
       status: board.columns.find((c) => c.id === columnId)?.name || '',
       due_date: due_date || null,
       assignee: assignee_id || null, // UI mostrará ID temporalmente o lo resolverá
+      sprint_id: sprint_id ?? null,
     };
 
     setBoard((prev) => {
@@ -159,6 +162,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
         priority,
         assignee_id,
         due_date,
+        sprint_id: sprint_id ?? undefined,
       } as any);
       
       setBoard((prev) => {

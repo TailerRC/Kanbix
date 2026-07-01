@@ -1,0 +1,31 @@
+.pv-header {
+  margin-bottom: 20px;
+}
+
+.pv-header__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.pv-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.pv-header__subtitle {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+
+.pv-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}

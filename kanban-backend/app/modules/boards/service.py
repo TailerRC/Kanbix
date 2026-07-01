@@ -122,6 +122,7 @@ async def get_board_detail(db, project_id: str, board_id: str, current_user: dic
                 "task_type": t.get("task_type", "Tarea"),
                 "creator_name": assignee_names.get(str(t.get("creator_id"))) if t.get("creator_id") else None,
                 "status": t.get("status"),
+                "sprint_id": str(t["sprint_id"]) if t.get("sprint_id") else None,
             })
         columns.append({
             "id": str(col["_id"]),
@@ -200,6 +201,38 @@ async def update_column(db, board_id: str, column_id: str, payload: ColumnUpdate
 # ----------------------------------------------------------------------------
 # Tasks
 # ----------------------------------------------------------------------------
+async def list_project_tasks(db, project_id: str, current_user: dict) -> list[dict]:
+    """Lista plana de todas las tareas del proyecto (Calendario y Cronograma)."""
+    oid = to_object_id(project_id, "project_id", "Proyecto")
+    await ensure_project_access(db, oid, current_user, "Viewer")
+
+    names: dict[str, str] = {}
+    async for u in db.users.find({}, {"nombre_completo": 1}):
+        names[str(u["_id"])] = u.get("nombre_completo", "")
+
+    tasks = []
+    async for t in db.tasks.find({"project_id": oid}).sort("created_at", 1):
+        assignee_id = t.get("assignee_id")
+        tasks.append({
+            "id": str(t["_id"]),
+            "title": t.get("title"),
+            "description": t.get("description"),
+            "status": t.get("status"),
+            "priority": t.get("priority"),
+            "assignee": names.get(str(assignee_id)) if assignee_id else None,
+            "assignee_id": str(assignee_id) if assignee_id else None,
+            "due_date": t.get("due_date"),
+            "start_date": t.get("start_date"),
+            "story_points": t.get("story_points"),
+            "sprint_id": str(t["sprint_id"]) if t.get("sprint_id") else None,
+            "column_id": str(t["column_id"]) if t.get("column_id") else None,
+            "board_id": str(t["board_id"]) if t.get("board_id") else None,
+            "task_type": t.get("task_type", "Tarea"),
+            "tags": t.get("tags", []),
+        })
+    return tasks
+
+
 async def _resolve_target_column(db, board_id: ObjectId, column_id: str | None) -> dict:
     if column_id:
         col = await db.columns.find_one({"_id": to_object_id(column_id, "column_id", "Columna"), "board_id": board_id})
@@ -224,6 +257,10 @@ async def create_task(db, board_id: str, payload: TaskCreate, current_user: dict
         if get_project_role(project, payload.assignee_id) is None:  # RN-25
             raise APIError(400, "La tarea solo puede asignarse a un miembro del proyecto", "assignee_id")
 
+    sprint_oid = None
+    if payload.sprint_id:
+        sprint_oid = to_object_id(payload.sprint_id, "sprint_id", "Sprint")
+
     position = await db.tasks.count_documents({"column_id": column["_id"]})
     doc = model.new_task_document(
         project_id=board["project_id"],
@@ -238,6 +275,8 @@ async def create_task(db, board_id: str, payload: TaskCreate, current_user: dict
         due_date=payload.due_date,
         tags=payload.tags,
         position=position,
+        start_date=payload.start_date,
+        sprint_id=sprint_oid,
     )
     result = await db.tasks.insert_one(doc)
 

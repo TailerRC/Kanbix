@@ -13,10 +13,16 @@
 /* ---- Header ---- */
 .bl-header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.bl-header-top {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 16px;
 }
 
 /* ---- Inline Create ---- */
@@ -74,7 +80,16 @@
   font-size: var(--fs-caption);
   color: var(--color-text-muted);
   margin-left: 8px;
-  margin-right: auto;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.bl-sprint-dates:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary, var(--color-text));
 }
 
 .bl-sprint-dates--empty {
@@ -84,6 +99,60 @@
 
 .bl-sprint-dates--empty:hover {
   text-decoration: underline;
+}
+
+.bl-sprint-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  margin-right: auto;
+}
+
+.bl-sprint-edit:hover {
+  background: var(--color-bg);
+  color: var(--color-primary);
+}
+
+/* Header tools: search + create sprint */
+.bl-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bl-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.bl-search input {
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 13px;
+  color: var(--color-text-primary, var(--color-text));
+  width: 180px;
+}
+
+.bl-search__clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  padding: 0;
 }
 
 .bl-header-left {
@@ -159,6 +228,42 @@
 
 .bl-sprint-group--board {
   opacity: 0.85;
+}
+
+/* Drop zones para arrastrar tareas entre sprints/backlog */
+.bl-sprint-group--droppable {
+  outline: 1px dashed transparent;
+}
+
+.bl-sprint-group--dragover {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: -2px;
+  background: var(--color-brand-light, #eef2ff);
+}
+
+.bl-row[draggable='true'] {
+  cursor: grab;
+}
+
+.bl-row[draggable='true']:active {
+  cursor: grabbing;
+}
+
+/* Selector de responsable */
+.bl-assignee {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.bl-assignee-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
 }
 
 .bl-sprint-header {

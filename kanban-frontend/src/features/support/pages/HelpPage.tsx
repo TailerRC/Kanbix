@@ -9,7 +9,6 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../shared/auth/AuthContext';
 import './HelpPage.css';
 
 
@@ -86,15 +85,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function HelpPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [search, setSearch] = useState('');
 
   const filtered = FAQ_ITEMS.filter(
     f => f.q.toLowerCase().includes(search.toLowerCase()) || f.a.toLowerCase().includes(search.toLowerCase())
   );
-
-  const isAdmin = user?.rol_global === 'Admin';
-
 
   return (
     <div className="help-page">

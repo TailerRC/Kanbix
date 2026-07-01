@@ -37,6 +37,7 @@ class TaskCreate(BaseModel):
     priority: Prioridad = "Media"
     assignee_id: Optional[str] = None
     due_date: Optional[datetime] = None
+    start_date: Optional[datetime] = None
     tags: List[str] = Field(default_factory=list)
     sprint_id: Optional[str] = None
 

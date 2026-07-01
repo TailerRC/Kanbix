@@ -250,6 +250,9 @@ Inicia el sprint. Falla si ya hay otro sprint `active`.
 #### POST /api/v1/sprints/{sprint_id}/complete
 Completa el sprint (estado `completed`).
 
+#### DELETE /api/v1/sprints/{sprint_id}
+Elimina un sprint (rol Manager+). No permite eliminar un sprint `active`. Las tareas del sprint vuelven al backlog (`sprint_id = null`).
+
 ---
 
 ## Resumen de Endpoints

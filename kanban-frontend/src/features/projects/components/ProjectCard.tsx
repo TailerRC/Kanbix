@@ -18,7 +18,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   return (
     <button
       className="project-card"
-      onClick={() => navigate(`/proyectos/${project.id}/tablero`)}
+      onClick={() => navigate(`/proyectos/${project.id}/resumen`)}
     >
       <div className="project-card__top">
         <span className="project-card__icon">

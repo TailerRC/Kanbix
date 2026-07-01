@@ -151,9 +151,13 @@ Cada endpoint en los contratos API debe validar el permiso según esta tabla:
 | POST | /api/v1/tasks/{id}/subtasks | Developer+ (del proyecto) |
 | PATCH | /api/v1/tasks/{id}/subtasks/{sid}/toggle | Developer+ (del proyecto) |
 | POST | /api/v1/tasks/{id}/dependencies | Manager+ (del proyecto) |
+| GET | /api/v1/projects/{id}/tasks | Viewer+ (del proyecto) |
 | GET | /api/v1/projects/{id}/workload | Manager+ (del proyecto) |
 | GET | /api/v1/projects/{id}/dashboard/summary | Viewer+ (del proyecto) |
+| GET | /api/v1/projects/{id}/dashboard/overview | Viewer+ (del proyecto) |
 | GET | /api/v1/projects/{id}/sprints/{sid}/burndown | Viewer+ (del proyecto) |
+| GET | /api/v1/projects/{id}/sprints/{sid}/burnup | Viewer+ (del proyecto) |
+| GET | /api/v1/projects/{id}/reports/velocity | Manager+ (del proyecto) |
 | GET | /api/v1/projects/{id}/reports/workload | Manager+ (del proyecto) |
 
 ---

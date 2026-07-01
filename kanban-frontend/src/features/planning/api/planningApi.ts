@@ -17,4 +17,7 @@ export const planningApi = {
 
   completeSprint: (sprintId: string): Promise<Sprint> =>
     api.post(`/sprints/${sprintId}/complete`, {}).then(res => res.data),
+
+  deleteSprint: (sprintId: string): Promise<void> =>
+    api.delete(`/sprints/${sprintId}`).then(() => undefined),
 };

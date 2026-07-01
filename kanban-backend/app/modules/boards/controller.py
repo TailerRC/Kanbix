@@ -40,6 +40,10 @@ async def update_column(db, board_id, column_id, payload: ColumnUpdate, current)
     return await service.update_column(db, board_id, column_id, payload, current)
 
 
+async def list_project_tasks(db, project_id, current):
+    return await service.list_project_tasks(db, project_id, current)
+
+
 async def create_task(db, board_id, payload: TaskCreate, current):
     return await service.create_task(db, board_id, payload, current)
 

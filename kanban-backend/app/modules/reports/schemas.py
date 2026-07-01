@@ -25,9 +25,62 @@ class BurndownPoint(BaseModel):
     actual_remaining: float
 
 
+class BurnupPoint(BaseModel):
+    date: str
+    scope: float
+    completed: float
+
+
+class VelocityItem(BaseModel):
+    sprint_id: str
+    sprint_name: str
+    committed_points: float
+    completed_points: float
+
+
 class WorkloadItem(BaseModel):
     member_id: str
     member_name: str
     tasks_todo: int
     tasks_in_progress: int
     tasks_done: int
+
+
+# ---------- Resumen (overview) ----------
+class Metrics7d(BaseModel):
+    created: int
+    updated: int
+    completed: int
+    due_soon: int
+
+
+class StatusCount(BaseModel):
+    status: str
+    count: int
+
+
+class TypeCount(BaseModel):
+    type: str
+    count: int
+
+
+class AssigneeCount(BaseModel):
+    assignee_id: Optional[str] = None
+    name: str
+    count: int
+
+
+class RecentActivityItem(BaseModel):
+    task_id: str
+    title: Optional[str] = None
+    status: Optional[str] = None
+    assignee: Optional[str] = None
+    updated_at: Optional[datetime] = None
+
+
+class DashboardOverview(BaseModel):
+    metrics_7d: Metrics7d
+    by_status: List[StatusCount]
+    by_type: List[TypeCount]
+    by_assignee: List[AssigneeCount]
+    recent_activity: List[RecentActivityItem]

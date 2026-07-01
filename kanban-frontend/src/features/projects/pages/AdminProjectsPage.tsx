@@ -17,6 +17,7 @@ export default function AdminProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState('');
   
   // Custom delete modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -49,6 +50,7 @@ export default function AdminProjectsPage() {
 
   const confirmDelete = async () => {
     if (!projectToDelete) return;
+    setDeleteError('');
     setDeletingId(projectToDelete.id);
     try {
       await deleteProject(projectToDelete.id);
@@ -56,7 +58,7 @@ export default function AdminProjectsPage() {
       setProjectToDelete(null);
       loadData();
     } catch (err) {
-      alert(getErrorMessage(err, 'No se pudo eliminar el proyecto'));
+      setDeleteError(getErrorMessage(err, 'No se pudo eliminar el proyecto'));
     } finally {
       setDeletingId(null);
     }
@@ -121,7 +123,7 @@ export default function AdminProjectsPage() {
                       <th>Nombre del Proyecto</th>
                       <th>Miembros</th>
                       <th>Fecha Creación</th>
-                      <th style={{ width: '80px', textAlign: 'center' }}>Acciones</th>
+                        <th className="admin-projects__th-actions">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -141,7 +143,7 @@ export default function AdminProjectsPage() {
                             {p.created_at ? new Date(p.created_at).toLocaleDateString() : '—'}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
+                        <td className="admin-projects__td-actions">
                           <button
                             className="btn-delete-admin"
                             disabled={deletingId !== null}
@@ -214,55 +216,34 @@ export default function AdminProjectsPage() {
         createPortal(
           <div className="admin-projects__delete-overlay" onClick={() => setShowDeleteModal(false)}>
             <div className="admin-projects__delete-modal" onClick={(e) => e.stopPropagation()}>
-              <h3 className="admin-projects__delete-modal-title" style={{ color: 'var(--color-error, #ef4444)' }}>
+              <h3 className="admin-projects__delete-modal-title admin-projects__delete-modal-title--danger">
                 Eliminar Proyecto
               </h3>
-              <p style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--color-text-secondary)' }}>
+              <p className="admin-projects__delete-modal-text">
                 ¿Estás seguro de que deseas eliminar el proyecto <strong>"{projectToDelete.name}"</strong>? Esta acción es irreversible.
               </p>
-              <div style={{
-                padding: '10px 14px',
-                backgroundColor: 'var(--color-error-bg)',
-                borderLeft: '3px solid var(--color-error, #ef4444)',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                color: 'var(--color-error, #ef4444)',
-                lineHeight: '1.4'
-              }}>
+              <div className="admin-projects__delete-modal-warning">
                 Se eliminarán en cascada todos sus tableros, columnas, tareas, comentarios y sprints permanentemente de la base de datos.
               </div>
+              {deleteError && (
+                <div className="admin-projects__delete-modal-error" role="alert">
+                  {deleteError}
+                </div>
+              )}
               <div className="admin-projects__delete-modal-actions">
                 <button
                   type="button"
-                  className="btn btn--muted"
+                  className="admin-projects__delete-btn-cancel"
                   onClick={() => setShowDeleteModal(false)}
                   disabled={deletingId !== null}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--color-border)',
-                    background: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem'
-                  }}
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="admin-projects__delete-btn-confirm"
                   onClick={confirmDelete}
                   disabled={deletingId !== null}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: '#ef4444',
-                    border: 'none',
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 'var(--fw-semibold)'
-                  }}
                 >
                   {deletingId !== null ? 'Eliminando...' : 'Sí, eliminar'}
                 </button>

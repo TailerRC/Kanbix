@@ -113,6 +113,15 @@
   font-weight: var(--fw-semibold, 600);
 }
 
+.admin-projects__th-actions {
+  width: 80px;
+  text-align: center;
+}
+
+.admin-projects__td-actions {
+  text-align: center;
+}
+
 .admin-projects__table tbody tr:hover {
   background-color: var(--color-bg, #f8fafc);
 }
@@ -319,11 +328,83 @@
   margin: 0;
 }
 
+.admin-projects__delete-modal-title--danger {
+  color: var(--color-error, #ef4444);
+}
+
+.admin-projects__delete-modal-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0;
+}
+
+.admin-projects__delete-modal-warning {
+  padding: 10px 14px;
+  background-color: var(--color-error-bg, #fef2f2);
+  border-left: 3px solid var(--color-error, #ef4444);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--color-error, #ef4444);
+  line-height: 1.4;
+}
+
+.admin-projects__delete-modal-error {
+  padding: 10px 14px;
+  background-color: var(--color-error-bg, #fef2f2);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--color-error, #dc2626);
+  font-weight: 500;
+}
+
 .admin-projects__delete-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 4px;
+}
+
+.admin-projects__delete-btn-cancel {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text-primary, #0f172a);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.admin-projects__delete-btn-cancel:hover:not(:disabled) {
+  background: var(--color-bg, #f8fafc);
+  border-color: var(--color-text-muted, #94a3b8);
+}
+
+.admin-projects__delete-btn-confirm {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm, 6px);
+  background-color: var(--color-error, #ef4444);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.admin-projects__delete-btn-confirm:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.admin-projects__delete-btn-confirm:disabled,
+.admin-projects__delete-btn-cancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 @keyframes scaleIn {

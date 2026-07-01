@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import Icon, { Logo, type IconName } from './Icon';
+import Icon, { type IconName } from './Icon';
 import { useAuth } from '../auth/AuthContext';
+import kanbixLogo from '../../assets/kanbix-logo.png';
 import './Sidebar.css';
 
 interface NavItem {
@@ -13,7 +14,6 @@ interface NavItem {
 }
 
 const menuItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
   { to: '/projects', label: 'Proyectos', icon: 'backlog' },
 ];
 
@@ -50,11 +50,10 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
       {/* Logo */}
-      <NavLink to="/" className="sidebar__logo">
-        <span className="sidebar__logo-icon">
-          <Logo size={20} color="#FFFFFF" />
-        </span>
-        <span className="sidebar__logo-text">Kanbix</span>
+      <NavLink to="/projects" className="sidebar__logo">
+        <div className="sidebar__logo-wrap">
+          <img src={kanbixLogo} alt="Kanbix" className="sidebar__logo-img" />
+        </div>
       </NavLink>
 
       {/* Menu label (only for non-Admins) */}

@@ -41,3 +41,8 @@ class SprintUpdate(BaseModel):
     goal: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+
+
+class SprintComplete(BaseModel):
+    # Destino de las tareas no finalizadas: id de otro sprint o None = backlog.
+    move_incomplete_to: Optional[str] = None

@@ -16,6 +16,7 @@ from app.shared.email import send_email_via_resend
 TAREA_ASIGNADA = "tarea_asignada"
 DEADLINE_PROXIMO = "deadline_proximo"
 TAREA_MOVIDA = "tarea_movida"
+TAREA_COMPLETADA = "tarea_completada"
 MENCION = "mencion"
 
 

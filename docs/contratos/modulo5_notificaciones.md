@@ -19,7 +19,7 @@ Retorna todas las notificaciones del usuario autenticado, con filtros y paginaci
 | leida | boolean | No | Filtra por estado de lectura: true (leídas) o false (no leídas) |
 | limite | integer | No | Cantidad máxima de resultados (default: 20, max: 100) |
 | pagina | integer | No | Número de página para paginación (default: 1) |
-| tipo | string | No | Filtra por tipo: `tarea_asignada` \| `deadline_proximo` \| `tarea_movida` \| `mencion` |
+| tipo | string | No | Filtra por tipo: `tarea_asignada` \| `deadline_proximo` \| `tarea_movida` \| `tarea_completada` \| `mencion` |
 
 #### Response — 200 OK
 

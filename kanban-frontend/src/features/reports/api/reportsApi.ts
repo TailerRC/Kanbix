@@ -34,6 +34,41 @@ export interface VelocityItem {
   completed_points: number;
 }
 
+export interface SprintReportMetrics {
+  committed_points: number;
+  completed_points: number;
+  total_tasks: number;
+  completed_tasks: number;
+}
+
+export interface SprintReportTaskSnapshot {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  assignee_name: string;
+  story_points: number;
+  due_date: string | null;
+  subtasks_count: number;
+  completed_subtasks_count: number;
+}
+
+export interface SprintReportSummary {
+  sprint_id: string;
+  sprint_name: string;
+  goal: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  completed_at: string;
+  metrics: SprintReportMetrics;
+}
+
+export interface SprintReportDetail extends SprintReportSummary {
+  project_id: string;
+  completed_by: string;
+  tasks: SprintReportTaskSnapshot[];
+}
+
 export const reportsApi = {
   getOverview: (projectId: string): Promise<DashboardOverview> =>
     api.get(`/projects/${projectId}/dashboard/overview`).then((r) => r.data),
@@ -46,4 +81,10 @@ export const reportsApi = {
 
   getVelocity: (projectId: string): Promise<VelocityItem[]> =>
     api.get(`/projects/${projectId}/reports/velocity`).then((r) => r.data),
+
+  listCompletedSprintsReports: (projectId: string): Promise<SprintReportSummary[]> =>
+    api.get(`/projects/${projectId}/reports/sprints-completed`).then((r) => r.data),
+
+  getCompletedSprintReportDetail: (projectId: string, sprintId: string): Promise<SprintReportDetail> =>
+    api.get(`/projects/${projectId}/reports/sprints-completed/${sprintId}`).then((r) => r.data),
 };

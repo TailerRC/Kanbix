@@ -248,7 +248,14 @@ Actualiza campos de un sprint.
 Inicia el sprint. Falla si ya hay otro sprint `active`.
 
 #### POST /api/v1/sprints/{sprint_id}/complete
-Completa el sprint (estado `completed`).
+Completa el sprint (estado `completed`). Solo sprints `active`.
+
+**Request Body (opcional)**
+```json
+{ "move_incomplete_to": "64f... | null" }
+```
+- Mueve las tareas **no finalizadas** (status ≠ `Done`) al sprint indicado, o al backlog si es `null`.
+- Registra un **snapshot** en el sprint para Informes/Velocity: `committed_points` (puntos comprometidos antes de mover) y `completed_points` (puntos finalizados), además de `total_tasks`, `completed_tasks` y `completed_at`.
 
 #### DELETE /api/v1/sprints/{sprint_id}
 Elimina un sprint (rol Manager+). No permite eliminar un sprint `active`. Las tareas del sprint vuelven al backlog (`sprint_id = null`).

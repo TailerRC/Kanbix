@@ -31,6 +31,11 @@ export async function createBoard(projectId: string, name: string, description?:
   return data;
 }
 
+export async function createColumn(boardId: string, name: string) {
+  const { data } = await api.post(`/boards/${boardId}/columns`, { name, order: 0, wip_limit: 0 });
+  return data;
+}
+
 export async function moveTask(taskId: string, columnId: string, position?: number) {
   const { data } = await api.patch(`/tasks/${taskId}/move`, { column_id: columnId, position });
   return data;
@@ -47,4 +52,8 @@ export async function createTask(
 export async function updateTask(taskId: string, payload: Partial<TaskCard>) {
   const { data } = await api.patch(`/tasks/${taskId}`, payload);
   return data;
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  await api.delete(`/tasks/${taskId}`);
 }

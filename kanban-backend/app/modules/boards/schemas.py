@@ -40,6 +40,7 @@ class TaskCreate(BaseModel):
     start_date: Optional[datetime] = None
     tags: List[str] = Field(default_factory=list)
     sprint_id: Optional[str] = None
+    dev_info: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -53,6 +54,7 @@ class TaskUpdate(BaseModel):
     tags: Optional[List[str]] = None
     task_type: Optional[Literal["Tarea", "Recurso", "Contact", "Request"]] = None
     sprint_id: Optional[str] = None
+    dev_info: Optional[str] = None
 
 
 class TaskMove(BaseModel):

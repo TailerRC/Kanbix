@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../../../shared/components/Icon';
 import type { TaskCard, BoardDetail, Prioridad } from '../../../shared/types';
 import BoardHeader from '../components/BoardHeader';
-import CardContextMenu from '../components/CardContextMenu';
 import type { GroupByOption } from '../components/GroupByDropdown';
 import InlineTaskForm from '../components/InlineTaskForm';
 import DroppableColumn from '../components/DroppableColumn';
 import TaskDetailModal from '../components/TaskDetailModal';
+import CompleteSprintModal from '../components/CompleteSprintModal';
 import Tooltip from '../../../shared/components/Tooltip';
 import { BoardProvider, useBoard } from '../context/BoardContext';
+import { useAuth } from '../../../shared/auth/AuthContext';
 import { DndContext, type DragEndEvent, closestCorners, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -18,17 +19,17 @@ import './BoardPage.css';
 // ─── Priority config ─────────────────────────────────────────────────────────
 const PRIORITY_COLOR: Record<Prioridad, string> = {
   Crítica: '#EF4444',
-  Alta:    '#F97316',
-  Media:   '#F59E0B',
-  Baja:    '#3B82F6',
+  Alta: '#F97316',
+  Media: '#F59E0B',
+  Baja: '#3B82F6',
 };
 
 // ─── Column visual config ─────────────────────────────────────────────────────
 const COLUMN_DOT_COLOR: Record<string, string> = {
-  'To Do':       '#94A3B8',
+  'To Do': '#94A3B8',
   'In Progress': '#3B82F6',
-  'In Review':   '#F97316',
-  'Done':        '#22C55E',
+  'In Review': '#F97316',
+  'Done': '#22C55E',
 };
 
 function getInitials(name: string | null | undefined): string {
@@ -46,7 +47,6 @@ interface UITaskCard extends TaskCard {
 // ─── TaskCardItem ─────────────────────────────────────────────────────────────
 function TaskCardItem({
   card,
-  board,
   currentColumnId,
   onOpenDetail,
 }: {
@@ -91,40 +91,39 @@ function TaskCardItem({
     <article
       className="kcard"
       ref={setNodeRef}
-      style={{ ...style, borderLeftColor: PRIORITY_COLOR[priority] }}
-      onDoubleClick={(e) => { e.preventDefault(); onOpenDetail(); }}
+      style={{ ...style, borderColor: PRIORITY_COLOR[priority] }}
+      onClick={(e) => { e.preventDefault(); onOpenDetail(); }}
       {...attributes}
       {...listeners}
     >
-      {/* Top row: ID + priority badge + context menu */}
-      <div className="kcard__top">
-        <span className="kcard__id">KBX-{card.id.substring(card.id.length - 4).toUpperCase()}</span>
-        <div className="kcard__top-right">
-          <span
-            className="kcard__priority"
-            style={{ color: PRIORITY_COLOR[priority], backgroundColor: `${PRIORITY_COLOR[priority]}18` }}
-          >
-            {priority}
-          </span>
-          <div onPointerDown={(e) => e.stopPropagation()}>
-            <CardContextMenu card={card} board={board} currentColumnId={currentColumnId} onMove={moveTaskOptimistic} />
+      <div className="kcard__content">
+        {/* Top row: ID + context menu */}
+        <div className="kcard__top">
+          <span className="kcard__id">KBX-{card.id.substring(card.id.length - 4).toUpperCase()}</span>
+          <div className="kcard__top-right">
+            <span
+              className="kcard__priority"
+              style={{ color: PRIORITY_COLOR[priority], backgroundColor: `${PRIORITY_COLOR[priority]}18` }}
+            >
+              {priority}
+            </span>
           </div>
         </div>
+
+        {/* Title */}
+        <h4 className="kcard__title">{card.title}</h4>
+
+        {/* Tags */}
+        {card.tags && card.tags.length > 0 && (
+          <div className="kcard__tags">
+            {card.tags.map((t) => (
+              <span key={t} className="kcard__tag">#{t}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer: avatar + meta (date, points) */}
       </div>
-
-      {/* Title */}
-      <h4 className="kcard__title">{card.title}</h4>
-
-      {/* Tags */}
-      {card.tags && card.tags.length > 0 && (
-        <div className="kcard__tags">
-          {card.tags.map((t) => (
-            <span key={t} className="kcard__tag">#{t}</span>
-          ))}
-        </div>
-      )}
-
-      {/* Footer: avatar + meta (date, points) */}
       <div className="kcard__footer">
         {/* Avatar con iniciales */}
         <Tooltip text={card.assignee || 'Sin asignar'}>
@@ -164,18 +163,22 @@ function TaskCardItem({
 function BoardContent() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // CAMBIO (PARTE 1 — PASO 6): activeSprint ya NO controla la visibilidad del tablero.
   // Se desestructura del contexto por si otros efectos secundarios lo usan, pero
   // NO se usa para condicionar el render de columnas ni filtrar tareas.
-  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic, updateTaskOptimistic } = useBoard();
+  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic, createColumnOptimistic } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
   const [addingTaskColId, setAddingTaskColId] = useState<string | null>(null);
   const [activeCard, setActiveCard] = useState<UITaskCard | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
-  const [moveTarget, setMoveTarget] = useState('backlog');
   const [completingBusy, setCompletingBusy] = useState(false);
+
+  // Estado para nueva columna
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -210,45 +213,44 @@ function BoardContent() {
     }
   };
 
-  const openComplete = () => {
-    setMoveTarget('backlog');
-    setCompleting(true);
-  };
+  const openComplete = () => setCompleting(true);
 
-  const confirmComplete = async () => {
+  const confirmComplete = async (moveTo: string | null) => {
     if (!activeSprint || !board) return;
     setCompletingBusy(true);
     try {
-      const incomplete = board.columns
-        .flatMap((c) => c.tasks.map((t) => ({ ...t, status: c.name })))
-        .filter((t) => t.sprint_id === activeSprint.id && t.status !== 'Done');
-      for (const task of incomplete) {
-        await updateTaskOptimistic(task.id, { sprint_id: moveTarget === 'backlog' ? null : moveTarget });
-      }
+      // El backend mueve las tareas incompletas y registra el snapshot para Informes.
       const { planningApi } = await import('../../planning/api/planningApi');
-      await planningApi.completeSprint(activeSprint.id);
+      await planningApi.completeSprint(activeSprint.id, moveTo);
       await loadSprints(projectId!);
+      await loadBoard(projectId!);
       setCompleting(false);
     } catch (err: any) {
-      alert('No se pudo completar el sprint: ' + (err?.message ?? ''));
+      alert('No se pudo completar el sprint: ' + (err?.response?.data?.detail ?? err?.message ?? ''));
     } finally {
       setCompletingBusy(false);
     }
   };
 
   if (loading) return <div className="app-loader">Cargando tablero...</div>;
-  if (error)   return <div style={{ padding: '24px', color: 'var(--color-danger)' }}>{error}</div>;
+  if (error) return <div style={{ padding: '24px', color: 'var(--color-danger)' }}>{error}</div>;
   if (!project || !board) return null;
 
-  // CAMBIO (PARTE 1 — PASO 2 + PASO 3):
-  // Las columnas kanban son TODAS las del board excepto "backlog" (que es una vista separada).
-  // NO se filtra por sprint: todas las tareas del proyecto se muestran en su columna.
-  const kanbanColumns = board.columns.filter(
-    (col) => col.name.toLowerCase() !== 'backlog'
-  );
-  // ELIMINADO: filter(t => activeSprint && t.sprint_id === activeSprint.id)
+  // Determine if user is a Developer in this project (not a Manager or Admin)
+  const currentUserMember = project?.members?.find((m: any) => m.user_id === user?.id);
+  const isDeveloper = currentUserMember?.rol === 'Developer' && user?.rol_global !== 'Admin';
 
-  // CAMBIO (PARTE 1 — PASO 4): el contador cuenta TODAS las tareas del proyecto (sin filtro de sprint)
+  // Las columnas kanban son TODAS las del board excepto "backlog" (que es una vista separada).
+  // Si el usuario es Developer, solo ve sus tareas asignadas.
+  const kanbanColumns = board.columns
+    .filter((col) => col.name.toLowerCase() !== 'backlog')
+    .map((col) => ({
+      ...col,
+      tasks: isDeveloper
+        ? col.tasks.filter((t) => t.assignee_id === user?.id)
+        : col.tasks,
+    }));
+
   const totalTasks = kanbanColumns.reduce((acc, col) => acc + col.tasks.length, 0);
 
   // Grupos para la vista "Agrupar por"
@@ -281,21 +283,19 @@ function BoardContent() {
     <div className="board-page">
       <BoardHeader
         projectName={project.name}
-        // CAMBIO (PASO 4): header muestra "[Nombre proyecto] — Tablero Principal"
         boardName={board.name}
         taskCount={totalTasks}
         groupBy={groupBy}
         onGroupByChange={setGroupBy}
         onNewTask={() => {
-          // CAMBIO: el botón "Nueva tarea" ya no depende de activeSprint.
-          // Abre el InlineTaskForm en la primera columna disponible del kanban.
-          if (kanbanColumns.length > 0) {
+          if (!isDeveloper && kanbanColumns.length > 0) {
             setAddingTaskColId(kanbanColumns[0].id);
           }
         }}
         projectId={projectId}
         activeSprintName={activeSprint?.name ?? null}
-        onCompleteSprint={openComplete}
+        onCompleteSprint={isDeveloper ? undefined : openComplete}
+        isDeveloper={isDeveloper}
       />
 
       {/* CAMBIO (PASO 1): DndContext se renderiza siempre, sin condición de sprint */}
@@ -330,15 +330,15 @@ function BoardContent() {
                             {col.name}
                             <span className="kcolumn__count">{col.tasks.length}</span>
                           </span>
-                          {/* CAMBIO (PASO 5): botón "+" DENTRO de cada columna,
-                              abre InlineTaskForm dentro de esa columna */}
-                          <button
-                            className="kcolumn__add"
-                            aria-label="Agregar tarea"
-                            onClick={() => setAddingTaskColId(col.id)}
-                          >
-                            <Icon name="plus" size={15} />
-                          </button>
+                          {!isDeveloper && (
+                            <button
+                              className="kcolumn__add"
+                              aria-label="Agregar tarea"
+                              onClick={() => setAddingTaskColId(col.id)}
+                            >
+                              <Icon name="plus" size={15} />
+                            </button>
+                          )}
                         </div>
                         <div className="kcolumn__cards">
                           {col.tasks.map((card) => (
@@ -363,6 +363,55 @@ function BoardContent() {
                     </SortableContext>
                   );
                 })}
+                {/* Botón para añadir nueva columna — solo para no-Developers */}
+                {!isDeveloper && (
+                  <div className="kcolumn kcolumn--new">
+                    {!isAddingColumn ? (
+                      <button className="kcolumn__new-btn" onClick={() => setIsAddingColumn(true)}>
+                        <Icon name="plus" size={15} /> Añadir columna
+                      </button>
+                    ) : (
+                      <div className="kcolumn__new-form">
+                        <input
+                          type="text"
+                          autoFocus
+                          className="kcolumn__new-input"
+                          placeholder="Nombre de la columna..."
+                          value={newColumnName}
+                          onChange={(e) => setNewColumnName(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter' && newColumnName.trim()) {
+                              await createColumnOptimistic(newColumnName.trim());
+                              setNewColumnName('');
+                              setIsAddingColumn(false);
+                            } else if (e.key === 'Escape') {
+                              setIsAddingColumn(false);
+                              setNewColumnName('');
+                            }
+                          }}
+                        />
+                        <div className="kcolumn__new-actions">
+                          <button
+                            className="kcolumn__new-save"
+                            disabled={!newColumnName.trim()}
+                            onClick={async () => {
+                              if (newColumnName.trim()) {
+                                await createColumnOptimistic(newColumnName.trim());
+                                setNewColumnName('');
+                                setIsAddingColumn(false);
+                              }
+                            }}
+                          >
+                            Guardar
+                          </button>
+                          <button className="kcolumn__new-cancel" onClick={() => { setIsAddingColumn(false); setNewColumnName(''); }}>
+                            <Icon name="x" size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -370,7 +419,7 @@ function BoardContent() {
 
         <DragOverlay>
           {activeCard && board ? (
-            <TaskCardItem card={activeCard} board={board} currentColumnId="" onOpenDetail={() => {}} />
+            <TaskCardItem card={activeCard} board={board} currentColumnId="" onOpenDetail={() => { }} />
           ) : null}
         </DragOverlay>
       </DndContext>
@@ -379,34 +428,24 @@ function BoardContent() {
         <TaskDetailModal taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />
       )}
 
-      {completing && activeSprint && (
-        <div className="k-modal-overlay" onClick={() => !completingBusy && setCompleting(false)}>
-          <div className="k-modal-content" style={{ maxWidth: 420, padding: 24 }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 8px 0' }}>Completar {activeSprint.name}</h2>
-            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text-muted)' }}>
-              Las tareas no finalizadas se moverán a:
-            </p>
-            <select
-              value={moveTarget}
-              onChange={(e) => setMoveTarget(e.target.value)}
-              style={{ width: '100%', marginBottom: 24, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--color-border)' }}
-            >
-              <option value="backlog">Backlog</option>
-              {sprints
-                .filter((s) => s.id !== activeSprint.id && s.state !== 'completed')
-                .map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-            </select>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button className="k-btn-text" onClick={() => setCompleting(false)} disabled={completingBusy}>Cancelar</button>
-              <button className="k-btn-primary" onClick={confirmComplete} disabled={completingBusy}>
-                {completingBusy ? 'Completando…' : 'Completar sprint'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {completing && activeSprint && (() => {
+        const sprintTasks = board.columns.flatMap((c) =>
+          c.tasks.filter((t) => t.sprint_id === activeSprint.id).map(() => ({ done: c.name === 'Done' }))
+        );
+        const doneCount = sprintTasks.filter((t) => t.done).length;
+        return (
+          <CompleteSprintModal
+            sprintId={activeSprint.id}
+            sprintName={activeSprint.name}
+            sprints={sprints}
+            doneCount={doneCount}
+            incompleteCount={sprintTasks.length - doneCount}
+            busy={completingBusy}
+            onConfirm={confirmComplete}
+            onClose={() => setCompleting(false)}
+          />
+        );
+      })()}
     </div>
   );
 }

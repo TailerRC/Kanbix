@@ -10,4 +10,4 @@ Documento de preferencias (1 por usuario):
 NOTIFICATIONS = "notifications"
 PREFERENCES = "notification_preferences"
 
-TIPOS_VALIDOS = {"tarea_asignada", "deadline_proximo", "tarea_movida", "mencion"}
+TIPOS_VALIDOS = {"tarea_asignada", "deadline_proximo", "tarea_movida", "tarea_completada", "mencion"}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 import { useAuth } from './shared/auth/AuthContext';
@@ -8,7 +8,6 @@ import SystemLogsPage from './features/auth/pages/SystemLogsPage';
 import TicketsAdminPage from './features/auth/pages/TicketsAdminPage';
 import ProfilePage from './features/auth/pages/ProfilePage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
-import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectResumenPage from './features/reports/pages/ProjectResumenPage';
 import InformesPage from './features/reports/pages/InformesPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
@@ -20,6 +19,17 @@ import TimelinePage from './features/kanban/pages/TimelinePage';
 import HealthCheck from './components/HealthCheck';
 import HelpPage from './features/support/pages/HelpPage';
 import SettingsPage from './features/support/pages/SettingsPage';
+
+// ---------------------------------------------------------------------------
+// Guard de ruta: redirige a Developer que intente acceder a vistas restringidas
+// ---------------------------------------------------------------------------
+function RequireNotDeveloper({ children, redirectTo }: { children: ReactNode; redirectTo: string }) {
+  const { user } = useAuth();
+  if (user?.rol_global === 'Developer') {
+    return <Navigate to={redirectTo} replace />;
+  }
+  return <>{children}</>;
+}
 
 // ---------------------------------------------------------------------------
 // Hook de Atajos de Teclado Operativos
@@ -191,15 +201,15 @@ function App() {
 
       {/* Rutas protegidas — cualquier usuario autenticado */}
       <Route element={<ProtectedLayout />}>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/proyectos/:projectId" element={<Navigate to="resumen" replace />} />
         <Route path="/proyectos/:projectId/resumen" element={<ProjectResumenPage />} />
         <Route path="/proyectos/:projectId/tablero" element={<BoardPage />} />
-        <Route path="/proyectos/:projectId/backlog" element={<BacklogPage />} />
         <Route path="/proyectos/:projectId/calendario" element={<CalendarPage />} />
-        <Route path="/proyectos/:projectId/cronograma" element={<TimelinePage />} />
-        <Route path="/proyectos/:projectId/informes" element={<InformesPage />} />
+        <Route path="/proyectos/:projectId/backlog" element={<RequireNotDeveloper redirectTo="../resumen"><BacklogPage /></RequireNotDeveloper>} />
+        <Route path="/proyectos/:projectId/cronograma" element={<RequireNotDeveloper redirectTo="../resumen"><TimelinePage /></RequireNotDeveloper>} />
+        <Route path="/proyectos/:projectId/informes" element={<RequireNotDeveloper redirectTo="../resumen"><InformesPage /></RequireNotDeveloper>} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/settings" element={<SettingsPage />} />

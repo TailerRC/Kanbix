@@ -40,6 +40,19 @@
   color: var(--color-primary);
 }
 
+/* Micro-animations and alignment for icons */
+.project-tabs__tab svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.project-tabs__tab:hover svg {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.project-tabs__tab--active svg {
+  color: var(--color-primary);
+}
+
 @media (max-width: 720px) {
   .project-tabs__tab span {
     display: none;

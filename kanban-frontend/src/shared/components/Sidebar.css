@@ -24,34 +24,31 @@
 .sidebar__logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 20px 20px 8px;
+  padding: 12px 14px 2px;
   text-decoration: none;
 }
 
-.sidebar__logo-icon {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-light));
-  border-radius: 12px;
+/* Contenedor del logo */
+.sidebar__logo-wrap {
+  width: 100%;
+  max-width: 160px;
+  height: 32px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  flex-shrink: 0;
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  overflow: visible;
 }
 
-.sidebar__logo:hover .sidebar__logo-icon {
-  transform: rotate(-6deg) scale(1.08);
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+.sidebar__logo-img {
+  width: auto;
+  height: 100px;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+  transition: opacity 0.2s ease;
 }
 
-.sidebar__logo-text {
-  font-size: 20px;
-  font-weight: var(--fw-bold);
-  color: var(--color-text-primary);
-  letter-spacing: -0.02em;
+.sidebar__logo:hover .sidebar__logo-img {
+  opacity: 0.8;
 }
 
 /* ---- Section label ---- */
@@ -61,7 +58,7 @@
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 20px 20px 8px;
+  padding: 4px 20px 4px;
 }
 
 /* ---- Navigation ---- */
@@ -117,6 +114,14 @@
   align-items: center;
   justify-content: center;
   color: inherit;
+}
+
+.sidebar__nav-icon svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.sidebar__nav-item:hover .sidebar__nav-icon svg {
+  transform: scale(1.08);
 }
 
 .sidebar__nav-label {
@@ -243,17 +248,25 @@
   .sidebar {
     width: var(--sidebar-collapsed);
   }
-  .sidebar__logo-text,
+
+  .sidebar__logo-img {
+    max-width: 36px;
+    /* Mostrar solo la parte del ícono en modo colapsado */
+    object-position: left;
+  }
+
   .sidebar__section-label,
   .sidebar__cta,
   .sidebar__nav-label,
   .sidebar__nav-badge {
     display: none;
   }
+
   .sidebar__nav-item {
     justify-content: center;
     padding: 12px;
   }
+
   .sidebar__logout-btn {
     justify-content: center;
   }
@@ -263,10 +276,12 @@
   .sidebar {
     transform: translateX(-100%);
   }
+
   .sidebar--open {
     transform: translateX(0);
     width: var(--sidebar-width);
   }
+
   .sidebar--open .sidebar__logo-text,
   .sidebar--open .sidebar__section-label,
   .sidebar--open .sidebar__cta,
@@ -274,6 +289,7 @@
   .sidebar--open .sidebar__nav-badge {
     display: initial;
   }
+
   .sidebar--open .sidebar__nav-item {
     justify-content: flex-start;
     padding: 10px 14px;

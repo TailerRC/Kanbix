@@ -15,9 +15,20 @@ export const planningApi = {
   startSprint: (sprintId: string): Promise<Sprint> =>
     api.post(`/sprints/${sprintId}/start`, {}).then(res => res.data),
 
-  completeSprint: (sprintId: string): Promise<Sprint> =>
-    api.post(`/sprints/${sprintId}/complete`, {}).then(res => res.data),
+  completeSprint: (sprintId: string, moveIncompleteTo?: string | null): Promise<Sprint> =>
+    api.post(`/sprints/${sprintId}/complete`, { move_incomplete_to: moveIncompleteTo ?? null }).then(res => res.data),
 
   deleteSprint: (sprintId: string): Promise<void> =>
     api.delete(`/sprints/${sprintId}`).then(() => undefined),
+
+  // Subtasks
+  addSubtask: (taskId: string, title: string): Promise<{ subtask_id: string; parent_id: string; title: string; completed: boolean }> =>
+    api.post(`/tasks/${taskId}/subtasks`, { title }).then(res => res.data),
+
+  toggleSubtask: (taskId: string, subtaskId: string): Promise<{ subtask_id: string; completed: boolean }> =>
+    api.patch(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`, {}).then(res => res.data),
+
+  // Dependencies
+  addDependency: (taskId: string, dependsOnTaskId: string): Promise<{ message: string; task_id: string; dependencies: string[] }> =>
+    api.post(`/tasks/${taskId}/dependencies`, { depends_on_task_id: dependsOnTaskId }).then(res => res.data),
 };

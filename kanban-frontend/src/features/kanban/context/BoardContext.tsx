@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import { getErrorMessage } from '../../../shared/api/api';
 import type { BoardDetail, Project, TaskCard } from '../../../shared/types';
 import { getProject } from '../../projects/api/projectsApi';
-import { listBoards, getBoardDetail, createBoard, moveTask, createTask, updateTask } from '../api/kanbanApi';
+import { listBoards, getBoardDetail, createBoard, createColumn, moveTask, createTask, updateTask, deleteTask } from '../api/kanbanApi';
 import { planningApi } from '../../planning/api/planningApi';
 import type { Sprint } from '../../../shared/types';
 
@@ -25,6 +25,8 @@ interface BoardContextValue {
     sprint_id?: string | null
   ) => Promise<void>;
   updateTaskOptimistic: (taskId: string, updates: Partial<TaskCard> & { column_id?: string }) => Promise<void>;
+  createColumnOptimistic: (name: string) => Promise<void>;
+  deleteTaskOptimistic: (taskId: string) => Promise<void>;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
@@ -108,7 +110,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
           }),
         };
       } else {
-         return prev;
+        return prev;
       }
     });
 
@@ -164,7 +166,7 @@ export function BoardProvider({ children }: { children: ReactNode }) {
         due_date,
         sprint_id: sprint_id ?? undefined,
       } as any);
-      
+
       setBoard((prev) => {
         if (!prev) return prev;
         return {
@@ -278,10 +280,71 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const createColumnOptimistic = async (name: string) => {
+    if (!board) return;
+
+    const tempId = `temp-col-${Date.now()}`;
+    const newCol = {
+      id: tempId,
+      name,
+      position: board.columns.length,
+      tasks: [],
+    };
+
+    setBoard((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        columns: [...prev.columns, newCol],
+      };
+    });
+
+    try {
+      const createdColumn = await createColumn(board.id, name);
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: prev.columns.map((c) => (c.id === tempId ? { ...createdColumn, tasks: [] } : c)),
+        };
+      });
+    } catch (err) {
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: prev.columns.filter((c) => c.id !== tempId),
+        };
+      });
+      alert(getErrorMessage(err, 'No se pudo crear la columna'));
+    }
+  };
+
+  const deleteTaskOptimistic = async (taskId: string) => {
+    if (!board) return;
+    const previousBoard = { ...board, columns: board.columns.map((c) => ({ ...c, tasks: [...c.tasks] })) };
+    setBoard((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        columns: prev.columns.map((col) => ({
+          ...col,
+          tasks: col.tasks.filter((t) => t.id !== taskId),
+        })),
+      };
+    });
+    try {
+      await deleteTask(taskId);
+    } catch (err) {
+      setBoard(previousBoard);
+      throw err;
+    }
+  };
+
   return (
-    <BoardContext.Provider value={{ 
-      project, board, sprints, activeSprint, loading, error, 
-      loadBoard, loadSprints, moveTaskOptimistic, createTaskOptimistic, updateTaskOptimistic 
+    <BoardContext.Provider value={{
+      project, board, sprints, activeSprint, loading, error,
+      loadBoard, loadSprints, moveTaskOptimistic, createTaskOptimistic, updateTaskOptimistic, createColumnOptimistic, deleteTaskOptimistic
     }}>
       {children}
     </BoardContext.Provider>

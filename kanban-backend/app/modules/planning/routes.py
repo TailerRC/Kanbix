@@ -8,6 +8,7 @@ from app.modules.planning.schemas import (
     DependencyCreate,
     PlanningUpdate,
     SubtaskCreate,
+    SprintComplete,
     SprintCreate,
     SprintUpdate,
 )
@@ -64,8 +65,13 @@ async def start_sprint(sprint_id: str, current=Depends(get_current_user)):
 
 
 @router.post("/sprints/{sprint_id}/complete")
-async def complete_sprint(sprint_id: str, current=Depends(get_current_user)):
-    return await controller.complete_sprint(get_database(), sprint_id, current)
+async def complete_sprint(
+    sprint_id: str,
+    payload: SprintComplete | None = None,
+    current=Depends(get_current_user),
+):
+    move_to = payload.move_incomplete_to if payload else None
+    return await controller.complete_sprint(get_database(), sprint_id, current, move_to)
 
 
 @router.delete("/sprints/{sprint_id}")

@@ -41,6 +41,10 @@
   position: relative;
 }
 
+.topbar__spacer {
+  flex: 1;
+}
+
 .topbar__search-input {
   width: 100%;
   padding: 10px 44px 10px 18px;

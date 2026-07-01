@@ -84,3 +84,38 @@ class DashboardOverview(BaseModel):
     by_type: List[TypeCount]
     by_assignee: List[AssigneeCount]
     recent_activity: List[RecentActivityItem]
+
+
+class SprintReportMetrics(BaseModel):
+    committed_points: float
+    completed_points: float
+    total_tasks: int
+    completed_tasks: int
+
+
+class SprintReportTaskSnapshot(BaseModel):
+    id: str
+    title: str
+    status: str
+    priority: str
+    assignee_name: str
+    story_points: float
+    due_date: Optional[str] = None
+    subtasks_count: int
+    completed_subtasks_count: int
+
+
+class SprintReportSummary(BaseModel):
+    sprint_id: str
+    sprint_name: str
+    goal: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    completed_at: datetime
+    metrics: SprintReportMetrics
+
+
+class SprintReportDetail(SprintReportSummary):
+    project_id: str
+    completed_by: str
+    tasks: List[SprintReportTaskSnapshot]

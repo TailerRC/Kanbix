@@ -132,15 +132,23 @@
 
 .cal-chip {
   font-size: 11.5px;
-  padding: 3px 6px;
-  border-radius: 5px;
-  background: var(--color-bg);
-  border-left: 3px solid #94A3B8;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--color-surface);
+  border: 1px solid #94A3B8; /* Se sobreescribe por inline style */
   color: var(--color-text-primary);
   cursor: grab;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.cal-chip:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
 }
 
 .cal-chip:active {
@@ -188,11 +196,19 @@
 }
 
 .cal-side__card {
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 8px;
-  background: var(--color-bg);
-  border-left: 3px solid #94A3B8;
+  background: var(--color-surface);
+  border: 1px solid #94A3B8; /* Se sobreescribe inline */
   cursor: grab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.cal-side__card:hover {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
 }
 
 .cal-side__card:active {

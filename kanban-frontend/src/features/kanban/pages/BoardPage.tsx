@@ -93,26 +93,27 @@ function TaskCardItem({
     <article
       className="kcard"
       ref={setNodeRef}
-      style={{ ...style, borderLeftColor: PRIORITY_COLOR[priority] }}
+      style={{ ...style, borderColor: PRIORITY_COLOR[priority] }}
       onDoubleClick={(e) => { e.preventDefault(); onOpenDetail(); }}
       {...attributes}
       {...listeners}
     >
-      {/* Top row: ID + priority badge + context menu */}
-      <div className="kcard__top">
-        <span className="kcard__id">KBX-{card.id.substring(card.id.length - 4).toUpperCase()}</span>
-        <div className="kcard__top-right">
-          <span
-            className="kcard__priority"
-            style={{ color: PRIORITY_COLOR[priority], backgroundColor: `${PRIORITY_COLOR[priority]}18` }}
-          >
-            {priority}
-          </span>
-          <div onPointerDown={(e) => e.stopPropagation()}>
-            <CardContextMenu card={card} board={board} currentColumnId={currentColumnId} onMove={moveTaskOptimistic} />
+      <div className="kcard__content">
+        {/* Top row: ID + context menu */}
+        <div className="kcard__top">
+          <span className="kcard__id">KBX-{card.id.substring(card.id.length - 4).toUpperCase()}</span>
+          <div className="kcard__top-right">
+            <span
+              className="kcard__priority"
+              style={{ color: PRIORITY_COLOR[priority], backgroundColor: `${PRIORITY_COLOR[priority]}18` }}
+            >
+              {priority}
+            </span>
+            <div onPointerDown={(e) => e.stopPropagation()}>
+              <CardContextMenu card={card} board={board} currentColumnId={currentColumnId} onMove={moveTaskOptimistic} />
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Title */}
       <h4 className="kcard__title">{card.title}</h4>
@@ -127,6 +128,7 @@ function TaskCardItem({
       )}
 
       {/* Footer: avatar + meta (date, points) */}
+      </div>
       <div className="kcard__footer">
         {/* Avatar con iniciales */}
         <Tooltip text={card.assignee || 'Sin asignar'}>
@@ -170,13 +172,17 @@ function BoardContent() {
   // CAMBIO (PARTE 1 — PASO 6): activeSprint ya NO controla la visibilidad del tablero.
   // Se desestructura del contexto por si otros efectos secundarios lo usan, pero
   // NO se usa para condicionar el render de columnas ni filtrar tareas.
-  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic } = useBoard();
+  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic, createColumnOptimistic } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
   const [addingTaskColId, setAddingTaskColId] = useState<string | null>(null);
   const [activeCard, setActiveCard] = useState<UITaskCard | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [completingBusy, setCompletingBusy] = useState(false);
+  
+  // Estado para nueva columna
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -357,6 +363,53 @@ function BoardContent() {
                     </SortableContext>
                   );
                 })}
+                {/* Botón para añadir nueva columna */}
+                <div className="kcolumn kcolumn--new">
+                  {!isAddingColumn ? (
+                    <button className="kcolumn__new-btn" onClick={() => setIsAddingColumn(true)}>
+                      <Icon name="plus" size={15} /> Añadir columna
+                    </button>
+                  ) : (
+                    <div className="kcolumn__new-form">
+                      <input
+                        type="text"
+                        autoFocus
+                        className="kcolumn__new-input"
+                        placeholder="Nombre de la columna..."
+                        value={newColumnName}
+                        onChange={(e) => setNewColumnName(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && newColumnName.trim()) {
+                            await createColumnOptimistic(newColumnName.trim());
+                            setNewColumnName('');
+                            setIsAddingColumn(false);
+                          } else if (e.key === 'Escape') {
+                            setIsAddingColumn(false);
+                            setNewColumnName('');
+                          }
+                        }}
+                      />
+                      <div className="kcolumn__new-actions">
+                        <button
+                          className="kcolumn__new-save"
+                          disabled={!newColumnName.trim()}
+                          onClick={async () => {
+                            if (newColumnName.trim()) {
+                              await createColumnOptimistic(newColumnName.trim());
+                              setNewColumnName('');
+                              setIsAddingColumn(false);
+                            }
+                          }}
+                        >
+                          Guardar
+                        </button>
+                        <button className="kcolumn__new-cancel" onClick={() => { setIsAddingColumn(false); setNewColumnName(''); }}>
+                          <Icon name="x" size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

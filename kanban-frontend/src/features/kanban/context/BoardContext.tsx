@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import { getErrorMessage } from '../../../shared/api/api';
 import type { BoardDetail, Project, TaskCard } from '../../../shared/types';
 import { getProject } from '../../projects/api/projectsApi';
-import { listBoards, getBoardDetail, createBoard, moveTask, createTask, updateTask } from '../api/kanbanApi';
+import { listBoards, getBoardDetail, createBoard, createColumn, moveTask, createTask, updateTask } from '../api/kanbanApi';
 import { planningApi } from '../../planning/api/planningApi';
 import type { Sprint } from '../../../shared/types';
 
@@ -25,6 +25,7 @@ interface BoardContextValue {
     sprint_id?: string | null
   ) => Promise<void>;
   updateTaskOptimistic: (taskId: string, updates: Partial<TaskCard> & { column_id?: string }) => Promise<void>;
+  createColumnOptimistic: (name: string) => Promise<void>;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
@@ -278,10 +279,51 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const createColumnOptimistic = async (name: string) => {
+    if (!board) return;
+
+    const tempId = `temp-col-${Date.now()}`;
+    const newCol = {
+      id: tempId,
+      name,
+      order: board.columns.length,
+      wip_limit: 0,
+      tasks: [],
+    };
+
+    setBoard((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        columns: [...prev.columns, newCol],
+      };
+    });
+
+    try {
+      const createdColumn = await createColumn(board.id, name);
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: prev.columns.map((c) => (c.id === tempId ? { ...createdColumn, tasks: [] } : c)),
+        };
+      });
+    } catch (err) {
+      setBoard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          columns: prev.columns.filter((c) => c.id !== tempId),
+        };
+      });
+      alert(getErrorMessage(err, 'No se pudo crear la columna'));
+    }
+  };
+
   return (
     <BoardContext.Provider value={{ 
       project, board, sprints, activeSprint, loading, error, 
-      loadBoard, loadSprints, moveTaskOptimistic, createTaskOptimistic, updateTaskOptimistic 
+      loadBoard, loadSprints, moveTaskOptimistic, createTaskOptimistic, updateTaskOptimistic, createColumnOptimistic 
     }}>
       {children}
     </BoardContext.Provider>

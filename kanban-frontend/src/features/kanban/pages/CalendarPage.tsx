@@ -18,6 +18,7 @@ const STATUS_COLOR: Record<string, string> = {
   Done: '#22C55E',
 };
 
+
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -161,7 +162,7 @@ export default function CalendarPage() {
                           draggable
                           onDragStart={() => setDragId(t.id)}
                           onDragEnd={() => setDragId(null)}
-                          style={{ borderLeftColor: STATUS_COLOR[t.status ?? ''] ?? '#94A3B8' }}
+                          style={{ borderColor: STATUS_COLOR[t.status ?? ''] ?? '#94A3B8' }}
                           title={t.title}
                         >
                           {t.title}
@@ -190,7 +191,7 @@ export default function CalendarPage() {
                     draggable
                     onDragStart={() => setDragId(t.id)}
                     onDragEnd={() => setDragId(null)}
-                    style={{ borderLeftColor: STATUS_COLOR[t.status ?? ''] ?? '#94A3B8' }}
+                    style={{ borderColor: STATUS_COLOR[t.status ?? ''] ?? '#94A3B8' }}
                   >
                     <div className="cal-side__card-title">{t.title}</div>
                     {t.status && <span className="cal-side__card-status">{t.status}</span>}

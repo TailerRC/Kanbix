@@ -646,3 +646,66 @@
   color: var(--color-text-primary, #111827);
   user-select: none;
 }
+
+/* Password requirements feedback (Nielsen H5/H10) */
+.admin-modal__password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.admin-modal__password-input-wrapper input {
+  padding-right: 2.75rem !important;
+}
+
+.admin-modal__password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-modal__password-toggle:hover {
+  background: var(--color-bg, #F3F4F6);
+  color: var(--color-text-primary, #111827);
+}
+
+.admin-modal__password-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.8rem;
+  margin-top: 0.6rem;
+  margin-bottom: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg, #F9FAFB);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 6px;
+}
+
+.admin-modal__rule {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6B7280);
+  transition: color 0.15s;
+}
+
+.admin-modal__rule-icon {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.admin-modal__rule--valid {
+  color: var(--color-success, #16A34A) !important;
+  font-weight: 500;
+}

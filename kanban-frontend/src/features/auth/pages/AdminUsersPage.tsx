@@ -57,6 +57,7 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
   const [rol, setRol]               = useState<RolGlobal>('Developer');
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
+  const [showPass, setShowPass]     = useState(false);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -66,8 +67,19 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
+  // Validaciones en tiempo real de contraseña (Heurística 5 - Prevención de Errores)
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber    = /[0-9]/.test(password);
+  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!isPasswordValid) {
+      setError('La contraseña debe cumplir con todos los requisitos.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -114,17 +126,47 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
             />
           </label>
 
-          <label className="admin-modal__field">
+          <div className="admin-modal__field">
             <span>Contraseña inicial</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 8 car., mayúscula, minúscula y número"
-              required
-            />
+            <div className="admin-modal__password-input-wrapper">
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingresar contraseña inicial"
+                required
+              />
+              <button
+                type="button"
+                className="admin-modal__password-toggle"
+                onClick={() => setShowPass(!showPass)}
+                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                <Icon name={showPass ? 'eye-off' : 'eye'} size={16} />
+              </button>
+            </div>
+
+            {/* Retroalimentación de validación visual (Heurísticas 5 y 10) */}
+            <div className="admin-modal__password-rules">
+              <div className={`admin-modal__rule ${hasMinLength ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasMinLength ? '✓' : '○'}</span>
+                <span>Mínimo 8 caracteres</span>
+              </div>
+              <div className={`admin-modal__rule ${hasUppercase ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasUppercase ? '✓' : '○'}</span>
+                <span>Al menos una mayúscula</span>
+              </div>
+              <div className={`admin-modal__rule ${hasLowercase ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasLowercase ? '✓' : '○'}</span>
+                <span>Al menos una minúscula</span>
+              </div>
+              <div className={`admin-modal__rule ${hasNumber ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasNumber ? '✓' : '○'}</span>
+                <span>Al menos un número</span>
+              </div>
+            </div>
             <small>El usuario deberá cambiarla en su primer inicio de sesión.</small>
-          </label>
+          </div>
 
           <label className="admin-modal__field">
             <span>Rol global</span>
@@ -139,7 +181,11 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
             <button type="button" className="admin-modal__btn--cancel" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="admin-modal__btn--submit" disabled={loading}>
+            <button 
+              type="submit" 
+              className="admin-modal__btn--submit" 
+              disabled={loading || (password.length > 0 && !isPasswordValid)}
+            >
               {loading ? 'Creando…' : 'Crear usuario'}
             </button>
           </div>

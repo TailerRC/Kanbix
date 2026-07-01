@@ -679,6 +679,35 @@
   color: var(--color-text-primary, #111827);
 }
 
+/* ── Error inline en campo ── */
+.admin-modal__field--has-error input,
+.admin-modal__field--has-error select {
+  border-color: var(--color-error, #DC2626) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+.admin-modal__field-error {
+  color: var(--color-error, #DC2626);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* ── Barra de fortaleza de contraseña (H1 - Visibility) ── */
+.admin-modal__password-strength {
+  height: 4px;
+  background: var(--color-border, #E5E7EB);
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.admin-modal__password-strength-bar {
+  height: 100%;
+  background: var(--color-brand, #6366F1);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
 .admin-modal__password-rules {
   display: grid;
   grid-template-columns: 1fr 1fr;

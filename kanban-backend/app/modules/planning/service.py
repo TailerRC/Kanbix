@@ -247,21 +247,63 @@ async def delete_sprint(db, sprint_id: str, current_user: dict) -> dict:
     return {"message": "Sprint eliminado exitosamente"}
 
 
-async def complete_sprint(db, sprint_id: str, current_user: dict) -> dict:
+def _sprint_points(task: dict) -> float:
+    return float(task.get("story_points") or 1)
+
+
+async def complete_sprint(db, sprint_id: str, current_user: dict, move_incomplete_to: str | None = None) -> dict:
     oid = to_object_id(sprint_id, "sprint_id", "Sprint")
     sprint = await db.sprints.find_one({"_id": oid})
     if sprint is None:
         raise APIError(404, "Sprint no encontrado", "sprint_id")
-    
+
     await ensure_project_access(db, sprint["project_id"], current_user, "Manager")
 
     if sprint["state"] != "active":
         raise APIError(400, "Solo se pueden completar sprints activos", "state")
 
+    # Destino de las tareas incompletas (otro sprint válido, o backlog = None).
+    target_oid = None
+    if move_incomplete_to:
+        target_oid = to_object_id(move_incomplete_to, "move_incomplete_to", "Sprint")
+        dest = await db.sprints.find_one({"_id": target_oid, "project_id": sprint["project_id"]})
+        if dest is None:
+            raise APIError(404, "Sprint destino no encontrado", "move_incomplete_to")
+        if dest.get("state") == "completed":
+            raise APIError(400, "No se pueden mover tareas a un sprint cerrado", "move_incomplete_to")
+
+    # Snapshot ANTES de mover: comprometido vs completado (para Velocity/Informes).
+    tasks = [t async for t in db.tasks.find({"sprint_id": oid})]
+    committed_points = sum(_sprint_points(t) for t in tasks)
+    completed_points = sum(_sprint_points(t) for t in tasks if t.get("status") == "Done")
+    total_tasks = len(tasks)
+    completed_tasks = sum(1 for t in tasks if t.get("status") == "Done")
+
     now = datetime.now(timezone.utc)
-    await db.sprints.update_one({"_id": oid}, {"$set": {"state": "completed", "updated_at": now}})
-    
+
+    # Mover las tareas NO finalizadas fuera del sprint (backlog u otro sprint).
+    await db.tasks.update_many(
+        {"sprint_id": oid, "status": {"$ne": "Done"}},
+        {"$set": {"sprint_id": target_oid, "updated_at": now}},
+    )
+
+    await db.sprints.update_one(
+        {"_id": oid},
+        {"$set": {
+            "state": "completed",
+            "completed_at": now,
+            "committed_points": committed_points,
+            "completed_points": completed_points,
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "updated_at": now,
+        }},
+    )
+
     return {
         "id": str(sprint["_id"]),
         "state": "completed",
+        "committed_points": committed_points,
+        "completed_points": completed_points,
+        "moved_incomplete": total_tasks - completed_tasks,
     }

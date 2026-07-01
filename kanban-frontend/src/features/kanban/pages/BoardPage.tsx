@@ -8,7 +8,9 @@ import type { GroupByOption } from '../components/GroupByDropdown';
 import InlineTaskForm from '../components/InlineTaskForm';
 import DroppableColumn from '../components/DroppableColumn';
 import TaskDetailModal from '../components/TaskDetailModal';
+import CompleteSprintModal from '../components/CompleteSprintModal';
 import Tooltip from '../../../shared/components/Tooltip';
+import { statusLabel } from '../../../shared/utils/status';
 import { BoardProvider, useBoard } from '../context/BoardContext';
 import { DndContext, type DragEndEvent, closestCorners, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -168,13 +170,12 @@ function BoardContent() {
   // CAMBIO (PARTE 1 — PASO 6): activeSprint ya NO controla la visibilidad del tablero.
   // Se desestructura del contexto por si otros efectos secundarios lo usan, pero
   // NO se usa para condicionar el render de columnas ni filtrar tareas.
-  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic, updateTaskOptimistic } = useBoard();
+  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
   const [addingTaskColId, setAddingTaskColId] = useState<string | null>(null);
   const [activeCard, setActiveCard] = useState<UITaskCard | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
-  const [moveTarget, setMoveTarget] = useState('backlog');
   const [completingBusy, setCompletingBusy] = useState(false);
 
   const sensors = useSensors(
@@ -210,27 +211,20 @@ function BoardContent() {
     }
   };
 
-  const openComplete = () => {
-    setMoveTarget('backlog');
-    setCompleting(true);
-  };
+  const openComplete = () => setCompleting(true);
 
-  const confirmComplete = async () => {
+  const confirmComplete = async (moveTo: string | null) => {
     if (!activeSprint || !board) return;
     setCompletingBusy(true);
     try {
-      const incomplete = board.columns
-        .flatMap((c) => c.tasks.map((t) => ({ ...t, status: c.name })))
-        .filter((t) => t.sprint_id === activeSprint.id && t.status !== 'Done');
-      for (const task of incomplete) {
-        await updateTaskOptimistic(task.id, { sprint_id: moveTarget === 'backlog' ? null : moveTarget });
-      }
+      // El backend mueve las tareas incompletas y registra el snapshot para Informes.
       const { planningApi } = await import('../../planning/api/planningApi');
-      await planningApi.completeSprint(activeSprint.id);
+      await planningApi.completeSprint(activeSprint.id, moveTo);
       await loadSprints(projectId!);
+      await loadBoard(projectId!);
       setCompleting(false);
     } catch (err: any) {
-      alert('No se pudo completar el sprint: ' + (err?.message ?? ''));
+      alert('No se pudo completar el sprint: ' + (err?.response?.data?.detail ?? err?.message ?? ''));
     } finally {
       setCompletingBusy(false);
     }
@@ -379,34 +373,24 @@ function BoardContent() {
         <TaskDetailModal taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />
       )}
 
-      {completing && activeSprint && (
-        <div className="k-modal-overlay" onClick={() => !completingBusy && setCompleting(false)}>
-          <div className="k-modal-content" style={{ maxWidth: 420, padding: 24 }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 8px 0' }}>Completar {activeSprint.name}</h2>
-            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text-muted)' }}>
-              Las tareas no finalizadas se moverán a:
-            </p>
-            <select
-              value={moveTarget}
-              onChange={(e) => setMoveTarget(e.target.value)}
-              style={{ width: '100%', marginBottom: 24, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--color-border)' }}
-            >
-              <option value="backlog">Backlog</option>
-              {sprints
-                .filter((s) => s.id !== activeSprint.id && s.state !== 'completed')
-                .map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-            </select>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button className="k-btn-text" onClick={() => setCompleting(false)} disabled={completingBusy}>Cancelar</button>
-              <button className="k-btn-primary" onClick={confirmComplete} disabled={completingBusy}>
-                {completingBusy ? 'Completando…' : 'Completar sprint'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {completing && activeSprint && (() => {
+        const sprintTasks = board.columns.flatMap((c) =>
+          c.tasks.filter((t) => t.sprint_id === activeSprint.id).map(() => ({ done: c.name === 'Done' }))
+        );
+        const doneCount = sprintTasks.filter((t) => t.done).length;
+        return (
+          <CompleteSprintModal
+            sprintId={activeSprint.id}
+            sprintName={activeSprint.name}
+            sprints={sprints}
+            doneCount={doneCount}
+            incompleteCount={sprintTasks.length - doneCount}
+            busy={completingBusy}
+            onConfirm={confirmComplete}
+            onClose={() => setCompleting(false)}
+          />
+        );
+      })()}
     </div>
   );
 }

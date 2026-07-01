@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../../../shared/components/Icon';
 import ProjectTabs from '../../../shared/components/ProjectTabs';
+import { statusLabel } from '../../../shared/utils/status';
 import type { TaskCard, Prioridad } from '../../../shared/types';
 import { BoardProvider, useBoard } from '../context/BoardContext';
 import TaskDetailModal from '../components/TaskDetailModal';
 import SprintEditModal from '../components/SprintEditModal';
+import CompleteSprintModal from '../components/CompleteSprintModal';
 import './BacklogPage.css';
 
 const PRIORITY_COLOR: Record<Prioridad, string> = {
@@ -85,7 +87,14 @@ function BacklogRow({ task, columnName, columns, members, onOpenDetail, onDragSt
       onDoubleClick={() => onOpenDetail(task.id)}
     >
       <td className="bl-cell bl-cell--check">
-        <input type="checkbox" className="bl-checkbox" onClick={(e) => e.stopPropagation()} />
+        <button
+          className="bl-view-btn"
+          title="Ver detalles de la tarea"
+          aria-label="Ver detalles"
+          onClick={(e) => { e.stopPropagation(); onOpenDetail(task.id); }}
+        >
+          <Icon name="eye" size={15} />
+        </button>
         <span className="bl-type-icon" title={task.task_type || 'Tarea'}>
           <Icon
             name={task.task_type === 'Recurso' ? 'tag' : task.task_type === 'Contact' ? 'lightbulb' : task.task_type === 'Request' ? 'plus-circle' : 'check-square'}
@@ -113,7 +122,7 @@ function BacklogRow({ task, columnName, columns, members, onOpenDetail, onDragSt
           onClick={(e) => e.stopPropagation()}
         >
           {columns.map((col) => (
-            <option key={col.id} value={col.id}>{col.name}</option>
+            <option key={col.id} value={col.id}>{statusLabel(col.name)}</option>
           ))}
         </select>
       </td>
@@ -253,8 +262,8 @@ function SprintGroup({ tasks, columns, members, sprint, isBacklog = false, onOpe
         {Object.entries(statusCounts).map(([status, count]) => {
           const sc = STATUS_COLORS[status] ?? { bg: '#F1F5F9', color: '#475569' };
           return (
-            <span key={status} className="bl-sprint-stat" style={{ color: sc.color }}>
-              {count} {status}
+            <span key={status} className="bl-sprint-stat" style={{ color: sc.color, background: sc.bg }}>
+              {count} {statusLabel(status)}
             </span>
           );
         })}
@@ -366,7 +375,7 @@ function BacklogContent() {
   const [completingSprint, setCompletingSprint] = useState<{ id: string, name: string } | null>(null);
   const [editingSprint, setEditingSprint] = useState<any | null>(null);
   const [search, setSearch] = useState('');
-  const [moveTarget, setMoveTarget] = useState<string>('backlog');
+  const [completingBusy, setCompletingBusy] = useState(false);
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const { updateTaskOptimistic } = useBoard();
 
@@ -476,28 +485,24 @@ function BacklogContent() {
 
   const handleCompleteSprint = (sprintId: string) => {
     const sprint = sprints.find(s => s.id === sprintId);
-    if (sprint) {
-      setMoveTarget('backlog');
-      setCompletingSprint({ id: sprint.id, name: sprint.name });
-    }
+    if (sprint) setCompletingSprint({ id: sprint.id, name: sprint.name });
   };
 
   const confirmCompleteSprint = async (moveToSprintId: string | null) => {
     if (!completingSprint) return;
+    setCompletingBusy(true);
     try {
-      const sprintTasks = allTasks.filter(t => t.sprint_id === completingSprint.id);
-      const incompleteTasks = sprintTasks.filter(t => t.status !== 'Done');
-
-      // Mover tareas incompletas
-      for (const task of incompleteTasks) {
-        await updateTaskOptimistic(task.id, { sprint_id: moveToSprintId });
-      }
-
-      await import('../../planning/api/planningApi').then(m => m.planningApi.completeSprint(completingSprint.id));
+      // El backend mueve las tareas incompletas y registra el snapshot para Informes.
+      await import('../../planning/api/planningApi').then(m =>
+        m.planningApi.completeSprint(completingSprint.id, moveToSprintId)
+      );
       await loadSprints(projectId!);
+      await loadBoard(projectId!);
       setCompletingSprint(null);
     } catch (err: any) {
-      alert('Error al completar el sprint: ' + err.message);
+      alert('Error al completar el sprint: ' + (err?.response?.data?.detail ?? err.message));
+    } finally {
+      setCompletingBusy(false);
     }
   };
 
@@ -578,38 +583,16 @@ function BacklogContent() {
       )}
 
       {completingSprint && (
-        <div className="k-modal-overlay" onClick={() => setCompletingSprint(null)}>
-          <div className="k-modal-content" style={{ maxWidth: 420, padding: 24 }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 8px 0' }}>Completar {completingSprint.name}</h2>
-            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text-muted)' }}>
-              Las tareas no finalizadas se moverán a:
-            </p>
-            <select
-              className="bl-status-select"
-              value={moveTarget}
-              onChange={(e) => setMoveTarget(e.target.value)}
-              style={{ width: '100%', marginBottom: 24, padding: '9px 11px' }}
-            >
-              <option value="backlog">Backlog</option>
-              {sprints
-                .filter((s) => s.id !== completingSprint.id && s.state !== 'completed')
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-            </select>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button className="k-btn-text" onClick={() => setCompletingSprint(null)}>Cancelar</button>
-              <button
-                className="k-btn-primary"
-                onClick={() => confirmCompleteSprint(moveTarget === 'backlog' ? null : moveTarget)}
-              >
-                Completar sprint
-              </button>
-            </div>
-          </div>
-        </div>
+        <CompleteSprintModal
+          sprintId={completingSprint.id}
+          sprintName={completingSprint.name}
+          sprints={sprints}
+          doneCount={allTasksRaw.filter((t) => t.sprint_id === completingSprint.id && t.status === 'Done').length}
+          incompleteCount={allTasksRaw.filter((t) => t.sprint_id === completingSprint.id && t.status !== 'Done').length}
+          busy={completingBusy}
+          onConfirm={confirmCompleteSprint}
+          onClose={() => setCompletingSprint(null)}
+        />
       )}
 
       {editingSprint && (

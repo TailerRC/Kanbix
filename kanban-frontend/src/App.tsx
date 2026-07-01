@@ -8,7 +8,6 @@ import SystemLogsPage from './features/auth/pages/SystemLogsPage';
 import TicketsAdminPage from './features/auth/pages/TicketsAdminPage';
 import ProfilePage from './features/auth/pages/ProfilePage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
-import DashboardPage from './features/reports/pages/DashboardPage';
 import ProjectResumenPage from './features/reports/pages/ProjectResumenPage';
 import InformesPage from './features/reports/pages/InformesPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
@@ -191,7 +190,7 @@ function App() {
 
       {/* Rutas protegidas — cualquier usuario autenticado */}
       <Route element={<ProtectedLayout />}>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/proyectos/:projectId" element={<Navigate to="resumen" replace />} />
         <Route path="/proyectos/:projectId/resumen" element={<ProjectResumenPage />} />

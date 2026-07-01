@@ -13,7 +13,6 @@ interface NavItem {
 }
 
 const menuItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
   { to: '/projects', label: 'Proyectos', icon: 'backlog' },
 ];
 
@@ -50,7 +49,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
       {/* Logo */}
-      <NavLink to="/" className="sidebar__logo">
+      <NavLink to="/projects" className="sidebar__logo">
         <span className="sidebar__logo-icon">
           <Logo size={20} color="#FFFFFF" />
         </span>

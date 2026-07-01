@@ -223,9 +223,16 @@ async def velocity(db, project_id: str, current_user: dict) -> list[dict]:
     result = []
     cursor = db.sprints.find({"project_id": oid, "state": "completed"}).sort("end_date", 1)
     async for sprint in cursor:
-        tasks = [t async for t in db.tasks.find({"sprint_id": sprint["_id"]})]
-        committed = sum(_points(t) for t in tasks)
-        completed = sum(_points(t) for t in tasks if t.get("status") == "Done")
+        # Preferimos el snapshot guardado al completar el sprint (comprometido real
+        # antes de mover las tareas incompletas). Si no existe (sprints antiguos),
+        # recalculamos con lo que quede asignado al sprint.
+        if sprint.get("committed_points") is not None:
+            committed = sprint["committed_points"]
+            completed = sprint.get("completed_points", 0)
+        else:
+            tasks = [t async for t in db.tasks.find({"sprint_id": sprint["_id"]})]
+            committed = sum(_points(t) for t in tasks)
+            completed = sum(_points(t) for t in tasks if t.get("status") == "Done")
         result.append(
             {
                 "sprint_id": str(sprint["_id"]),

@@ -15,8 +15,8 @@ export const planningApi = {
   startSprint: (sprintId: string): Promise<Sprint> =>
     api.post(`/sprints/${sprintId}/start`, {}).then(res => res.data),
 
-  completeSprint: (sprintId: string): Promise<Sprint> =>
-    api.post(`/sprints/${sprintId}/complete`, {}).then(res => res.data),
+  completeSprint: (sprintId: string, moveIncompleteTo?: string | null): Promise<Sprint> =>
+    api.post(`/sprints/${sprintId}/complete`, { move_incomplete_to: moveIncompleteTo ?? null }).then(res => res.data),
 
   deleteSprint: (sprintId: string): Promise<void> =>
     api.delete(`/sprints/${sprintId}`).then(() => undefined),

@@ -16,7 +16,7 @@ from app.modules.boards.schemas import (
 )
 from app.shared.authz import PROJECT_ROLE_RANK, ensure_project_access, get_project_role
 from app.shared.errors import APIError
-from app.shared.events import TAREA_ASIGNADA, TAREA_MOVIDA, MENCION, notify
+from app.shared.events import TAREA_ASIGNADA, TAREA_MOVIDA, TAREA_COMPLETADA, MENCION, notify
 from app.shared.utils.objectid import to_object_id
 
 
@@ -367,13 +367,32 @@ async def move_task(db, task_id: str, payload: TaskMove, current_user: dict) -> 
         {"$set": {"column_id": dest["_id"], "status": destino, "position": position, "updated_at": _now()}},
     )
 
-    # Notifica al asignado del movimiento (si no es quien lo movió).
+    actor = str(current_user.get("sub"))
     assignee = task.get("assignee_id")
-    if assignee and str(assignee) != str(current_user.get("sub")):
-        await notify(db, str(assignee), TAREA_MOVIDA,
-                     f"La tarea '{task['title']}' se movió a {destino}",
-                     {"tarea_id": task_id, "titulo": task["title"],
-                      "columna_anterior": origen, "columna_nueva": destino})
+
+    if destino == "Done":
+        # RN-29: al completar una tarea, notifica a los interesados (asignado y
+        # creador). Si el propio actor es el único interesado, le confirma a él.
+        recipients: set[str] = set()
+        if assignee:
+            recipients.add(str(assignee))
+        if task.get("creator_id"):
+            recipients.add(str(task["creator_id"]))
+        recipients.discard(actor)
+        if not recipients:
+            recipients.add(actor)
+        for uid in recipients:
+            await notify(db, uid, TAREA_COMPLETADA,
+                         f"La tarea '{task['title']}' fue completada",
+                         {"tarea_id": task_id, "titulo": task["title"],
+                          "proyecto_id": str(task["project_id"])})
+    else:
+        # Notifica al asignado del movimiento (si no es quien lo movió).
+        if assignee and str(assignee) != actor:
+            await notify(db, str(assignee), TAREA_MOVIDA,
+                         f"La tarea '{task['title']}' se movió a {destino}",
+                         {"tarea_id": task_id, "titulo": task["title"],
+                          "columna_anterior": origen, "columna_nueva": destino})
 
     return {"id": task_id, "column_id": str(dest["_id"]), "position": position, "status": destino}
 

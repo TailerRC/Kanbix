@@ -33,60 +33,86 @@ function RequireNotDeveloper({ children, redirectTo }: { children: ReactNode; re
 
 // ---------------------------------------------------------------------------
 // Hook de Atajos de Teclado Operativos
+// Aplica SOLO para Manager y Developer (Admin tiene su propio panel)
 // ---------------------------------------------------------------------------
 function useKeyboardShortcuts() {
   const navigate = useNavigate();
+  const location = useLocation();
   const lastKeyRef = useRef<string | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user?.rol_global === 'Admin') return;
+    // Solo activo para Manager y Developer
+    const rol = user?.rol_global;
+    if (!rol || rol === 'Admin') return;
+
+    // Extrae el projectId de la URL actual si existe
+    // e.g. /proyectos/abc123/tablero -> abc123
+    const getProjectId = () => {
+      const match = location.pathname.match(/\/proyectos\/([^/]+)/);
+      return match ? match[1] : null;
+    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignorar atajos si el usuario escribe en un campo de texto
       const tag = (e.target as HTMLElement).tagName;
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      const isEditable =
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        (e.target as HTMLElement).isContentEditable;
 
-      // 1. Atajo Búsqueda global (funciona siempre)
-      if ((e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) && !isInput) {
+      // ── Ctrl+K / "/" : Enfocar búsqueda global ──────────────────────────
+      if ((e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) && !isEditable) {
         e.preventDefault();
         const searchInput = document.getElementById('global-search') as HTMLInputElement;
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
+        if (searchInput) { searchInput.focus(); searchInput.select(); }
         return;
       }
 
-      // 2. Escape para salir de inputs o cerrar modales/paneles
+      // ── Escape: salir de inputs / cerrar modales ─────────────────────────
       if (e.key === 'Escape') {
-        if (isInput) {
-          (e.target as HTMLElement).blur();
-        }
-        // Cerrar modales (simulado por evento para que modales escuchen Escape)
+        if (isEditable) (e.target as HTMLElement).blur();
         return;
       }
 
-      if (isInput) return; // No procesar otros atajos si escribe en input
+      if (isEditable) return; // No procesar otros atajos dentro de campos
 
-      // 3. Atajos de secuencia (ej: G + D)
       const key = e.key.toLowerCase();
+
+      // ── Atajos de secuencia G + X ────────────────────────────────────────
+      // G+P → Mis Proyectos
+      // G+R → Resumen del proyecto (si hay projectId)
+      // G+T → Tablero
+      // G+B → Backlog (solo Manager)
+      // G+C → Calendario
+      // G+L → Cronograma (solo Manager)
+      // G+I → Informes (solo Manager)
       if (lastKeyRef.current === 'g') {
-        if (key === 'd') {
-          e.preventDefault();
-          navigate('/');
-        } else if (key === 'b') {
-          e.preventDefault();
-          navigate('/board');
-        } else if (key === 'p') {
-          e.preventDefault();
-          navigate('/projects');
-        }
+        const pid = getProjectId();
+        e.preventDefault();
         lastKeyRef.current = null;
+        if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+
+        if (key === 'p') {
+          navigate('/projects');
+        } else if (key === 'r' && pid) {
+          navigate(`/proyectos/${pid}/resumen`);
+        } else if (key === 't' && pid) {
+          navigate(`/proyectos/${pid}/tablero`);
+        } else if (key === 'c' && pid) {
+          navigate(`/proyectos/${pid}/calendario`);
+        } else if (key === 'b' && pid && rol === 'Manager') {
+          navigate(`/proyectos/${pid}/backlog`);
+        } else if (key === 'l' && pid && rol === 'Manager') {
+          navigate(`/proyectos/${pid}/cronograma`);
+        } else if (key === 'i' && pid && rol === 'Manager') {
+          navigate(`/proyectos/${pid}/informes`);
+        }
         return;
       }
 
+      // Registrar tecla G como inicio de secuencia
       if (key === 'g') {
         lastKeyRef.current = 'g';
         if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
@@ -96,20 +122,11 @@ function useKeyboardShortcuts() {
         return;
       }
 
-      // 4. Otros atajos directos
+      // ── Atajos directos ──────────────────────────────────────────────────
       if (e.key === '?') {
+        // ? → Ayuda
         e.preventDefault();
         navigate('/help');
-      } else if (key === 'n') {
-        // Nueva tarea: si está en /board abre el modal de añadir tarea enfocado
-        if (window.location.pathname === '/board') {
-          e.preventDefault();
-          const newTaskBtn = document.getElementById('new-task-button') || document.querySelector('[class*="add-task"]') as HTMLElement;
-          if (newTaskBtn) (newTaskBtn as HTMLElement).click();
-        } else {
-          e.preventDefault();
-          navigate('/board');
-        }
       }
     };
 
@@ -118,7 +135,7 @@ function useKeyboardShortcuts() {
       window.removeEventListener('keydown', handleKeyDown);
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     };
-  }, [navigate]);
+  }, [navigate, location.pathname, user?.rol_global]);
 }
 
 // ---------------------------------------------------------------------------

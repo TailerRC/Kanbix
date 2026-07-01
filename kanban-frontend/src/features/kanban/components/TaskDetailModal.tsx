@@ -228,7 +228,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
 
             {/* Title */}
             <div className="k-modal-title-wrapper">
-              {isEditingTitle ? (
+              {isEditingTitle && !isDeveloper ? (
                 <input
                   autoFocus
                   className="k-modal-title-input"
@@ -238,14 +238,14 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                   onKeyDown={(e) => { if (e.key === 'Enter') handleTitleSave(); }}
                 />
               ) : (
-                <h1 className="k-modal-title" onClick={() => setIsEditingTitle(true)}>{task.title}</h1>
+                <h1 className="k-modal-title" style={{ cursor: isDeveloper ? 'default' : 'pointer' }} onClick={() => { if (!isDeveloper) setIsEditingTitle(true); }}>{task.title}</h1>
               )}
             </div>
 
             {/* Description */}
             <div className="k-modal-section">
               <h3>Descripción</h3>
-              {isEditingDesc ? (
+              {isEditingDesc && !isDeveloper ? (
                 <div className="k-modal-desc-editor">
                   <textarea
                     autoFocus
@@ -260,8 +260,12 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                   </div>
                 </div>
               ) : (
-                <div className={`k-modal-desc-preview ${!(task as any).description ? 'empty' : ''}`} onClick={() => setIsEditingDesc(true)}>
-                  {(task as any).description || 'Añadir una descripción más detallada...'}
+                <div 
+                  className={`k-modal-desc-preview ${!(task as any).description ? 'empty' : ''}`} 
+                  style={{ cursor: isDeveloper ? 'default' : 'pointer' }}
+                  onClick={() => { if (!isDeveloper) setIsEditingDesc(true); }}
+                >
+                  {(task as any).description || (isDeveloper ? 'Sin descripción' : 'Añadir una descripción más detallada...')}
                 </div>
               )}
             </div>
@@ -275,8 +279,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     <input
                       type="checkbox"
                       checked={sub.completed}
+                      disabled={isDeveloper}
                       onChange={() => handleToggleSubtask(sub.subtask_id)}
-                      style={{ cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+                      style={{ cursor: isDeveloper ? 'default' : 'pointer', accentColor: 'var(--color-primary)' }}
                     />
                     <span style={{
                       fontSize: '0.9rem',
@@ -289,32 +294,34 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 ))}
               </div>
               
-              {isAddingSubtask ? (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    placeholder="Título de la subtarea..."
-                    className="k-modal-desc-input"
-                    value={newSubtaskTitle}
-                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                    style={{ fontSize: '0.85rem', padding: '6px 10px', flex: 1, border: '1px solid var(--color-border)', borderRadius: '4px', background: 'var(--color-surface)' }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddSubtask();
-                      if (e.key === 'Escape') setIsAddingSubtask(false);
-                    }}
-                    autoFocus
-                  />
-                  <button className="k-btn-primary" onClick={handleAddSubtask} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
-                    Añadir
+              {!isDeveloper && (
+                isAddingSubtask ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Título de la subtarea..."
+                      className="k-modal-desc-input"
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      style={{ fontSize: '0.85rem', padding: '6px 10px', flex: 1, border: '1px solid var(--color-border)', borderRadius: '4px', background: 'var(--color-surface)' }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddSubtask();
+                        if (e.key === 'Escape') setIsAddingSubtask(false);
+                      }}
+                      autoFocus
+                    />
+                    <button className="k-btn-primary" onClick={handleAddSubtask} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                      Añadir
+                    </button>
+                    <button className="k-btn-text" onClick={() => setIsAddingSubtask(false)} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button className="k-modal-placeholder-btn" onClick={() => setIsAddingSubtask(true)}>
+                    <Icon name="plus" size={14} /> Añadir subtarea
                   </button>
-                  <button className="k-btn-text" onClick={() => setIsAddingSubtask(false)} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <button className="k-modal-placeholder-btn" onClick={() => setIsAddingSubtask(true)}>
-                  <Icon name="plus" size={14} /> Añadir subtarea
-                </button>
+                )
               )}
             </div>
 
@@ -335,75 +342,78 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 })}
               </div>
 
-              {isAddingDep ? (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <select
-                    className="k-modal-select-inline"
-                    value={selectedDepTaskId}
-                    onChange={(e) => setSelectedDepTaskId(e.target.value)}
-                    style={{ fontSize: '0.85rem', flex: 1 }}
-                  >
-                    <option value="">Seleccionar tarea...</option>
-                    {otherTasks.map(t => (
-                      <option key={t.id} value={t.id}>{t.title} ({t.id.substring(t.id.length - 6).toUpperCase()})</option>
-                    ))}
-                  </select>
-                  <button className="k-btn-primary" onClick={handleAddDependency} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
-                    Añadir
+              {!isDeveloper && (
+                isAddingDep ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select
+                      className="k-modal-select-inline"
+                      value={selectedDepTaskId}
+                      onChange={(e) => setSelectedDepTaskId(e.target.value)}
+                      style={{ fontSize: '0.85rem', flex: 1 }}
+                    >
+                      <option value="">Seleccionar tarea...</option>
+                      {otherTasks.map(t => (
+                        <option key={t.id} value={t.id}>{t.title} ({t.id.substring(t.id.length - 6).toUpperCase()})</option>
+                      ))}
+                    </select>
+                    <button className="k-btn-primary" onClick={handleAddDependency} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                      Añadir
+                    </button>
+                    <button className="k-btn-text" onClick={() => setIsAddingDep(false)} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button className="k-modal-placeholder-btn" onClick={() => setIsAddingDep(true)}>
+                    <Icon name="plus" size={14} /> Añadir actividad vinculada
                   </button>
-                  <button className="k-btn-text" onClick={() => setIsAddingDep(false)} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <button className="k-modal-placeholder-btn" onClick={() => setIsAddingDep(true)}>
-                  <Icon name="plus" size={14} /> Añadir actividad vinculada
-                </button>
+                )
               )}
             </div>
-          </div>
 
-          {/* ── INFO DE DESARROLLO (dev_info) ── */}
-          <div className="k-modal-section">
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Icon name="code" size={14} style={{ color: 'var(--color-primary)' }} />
-              Información de Desarrollo
-            </h3>
-            <textarea
-              className="k-modal-dev-info"
-              placeholder="Describe los cambios realizados, URLs de PR/branch, notas técnicas..."
-              value={devInfoValue}
-              onChange={(e) => setDevInfoValue(e.target.value)}
-              onBlur={() => {
-                const trimmed = devInfoValue.trim();
-                const current = (task as any).dev_info ?? '';
-                if (trimmed !== current) {
-                  handleUpdate('dev_info', { dev_info: trimmed || null });
-                }
-              }}
-              rows={4}
-              style={{
-                width: '100%',
-                resize: 'vertical',
-                fontSize: '0.85rem',
-                padding: '10px 12px',
-                border: '1px solid var(--color-border)',
-                borderRadius: '8px',
-                background: 'var(--color-bg)',
-                color: 'var(--color-text-primary)',
-                lineHeight: 1.5,
-                fontFamily: 'inherit',
-                outline: 'none',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={(e) => { e.target.style.borderColor = 'var(--color-primary)'; }}
-            />
+            {/* ── INFO DE DESARROLLO (dev_info) ── */}
             {isDeveloper && (
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: '4px 0 0 0' }}>
-                Los cambios se guardan automáticamente al salir del campo.
-              </p>
+              <div className="k-modal-section">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icon name="code" size={14} style={{ color: 'var(--color-primary)' }} />
+                  Información de Desarrollo
+                </h3>
+                <textarea
+                  className="k-modal-dev-info"
+                  placeholder="Describe los cambios realizados, URLs de PR/branch, notas técnicas..."
+                  value={devInfoValue}
+                  onChange={(e) => setDevInfoValue(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = devInfoValue.trim();
+                    const current = (task as any).dev_info ?? '';
+                    if (trimmed !== current) {
+                      handleUpdate('dev_info', { dev_info: trimmed || null });
+                    }
+                  }}
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    resize: 'vertical',
+                    fontSize: '0.85rem',
+                    padding: '10px 12px',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '8px',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text-primary)',
+                    lineHeight: 1.5,
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    transition: 'border-color 0.15s',
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = 'var(--color-primary)'; }}
+                />
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: '4px 0 0 0' }}>
+                  Los cambios se guardan automáticamente al salir del campo.
+                </p>
+              </div>
             )}
           </div>
+
 
           {/* ── RIGHT COLUMN ── */}
           <div className="k-modal-right">
@@ -444,6 +454,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                       <select
                         className="k-modal-select-inline"
                         value={task.assignee_id || ''}
+                        disabled={isDeveloper}
                         onChange={(e) => {
                           const val = e.target.value || null;
                           const member = project?.members?.find(m => m.user_id === val);
@@ -452,14 +463,14 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                             assignee: member ? member.nombre_completo : null
                           });
                         }}
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', cursor: isDeveloper ? 'default' : 'pointer' }}
                       >
                         <option value="">Sin asignar</option>
                         {project?.members?.map(m => (
                           <option key={m.user_id} value={m.user_id}>{m.nombre_completo}</option>
                         ))}
                       </select>
-                      {user && task.assignee_id !== user.id && project?.members?.some(m => m.user_id === user.id) && (
+                      {!isDeveloper && user && task.assignee_id !== user.id && project?.members?.some(m => m.user_id === user.id) && (
                         <div style={{ marginTop: '2px' }}>
                           <span
                             className="k-link"
@@ -483,7 +494,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                       <select
                         className="k-modal-select-inline"
                         value={task.sprint_id || ''}
+                        disabled={isDeveloper}
                         onChange={(e) => handleUpdate('sprint_id', { sprint_id: e.target.value || null })}
+                        style={{ cursor: isDeveloper ? 'default' : 'pointer' }}
                       >
                         <option value="">Sin sprint (Backlog)</option>
                         {sprints.map(s => (
@@ -500,7 +513,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                       <select
                         className="k-modal-select-inline"
                         value={task.priority || 'Media'}
+                        disabled={isDeveloper}
                         onChange={(e) => handleUpdate('priority', { priority: e.target.value })}
+                        style={{ cursor: isDeveloper ? 'default' : 'pointer' }}
                       >
                         <option value="Baja">Baja</option>
                         <option value="Media">Media</option>
@@ -510,22 +525,31 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     </div>
                   </div>
 
-                  {/* Vencimiento — FIX: reads directly from task (live from board context) */}
+                  {/* Vencimiento */}
                   <div className="k-modal-detail-row">
                     <span className="k-modal-detail-label">Vencimiento</span>
                     <div className="k-modal-detail-value">
-                      <DatePickerPopover
-                        value={task.due_date ? new Date(task.due_date) : null}
-                        onChange={(date) => handleUpdate('due_date', { due_date: date ? date.toISOString() : null })}
-                        trigger={
-                          <div className="k-date-trigger">
-                            <Icon name="calendar" size={14} />
-                            {task.due_date
-                              ? new Date(task.due_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
-                              : 'Ninguna'}
-                          </div>
-                        }
-                      />
+                      {isDeveloper ? (
+                        <div className="k-date-trigger" style={{ cursor: 'default' }}>
+                          <Icon name="calendar" size={14} />
+                          {task.due_date
+                            ? new Date(task.due_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : 'Ninguna'}
+                        </div>
+                      ) : (
+                        <DatePickerPopover
+                          value={task.due_date ? new Date(task.due_date) : null}
+                          onChange={(date) => handleUpdate('due_date', { due_date: date ? date.toISOString() : null })}
+                          trigger={
+                            <div className="k-date-trigger">
+                              <Icon name="calendar" size={14} />
+                              {task.due_date
+                                ? new Date(task.due_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'Ninguna'}
+                            </div>
+                          }
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -533,18 +557,27 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                   <div className="k-modal-detail-row">
                     <span className="k-modal-detail-label">Fecha de inicio</span>
                     <div className="k-modal-detail-value">
-                      <DatePickerPopover
-                        value={task.start_date ? new Date(task.start_date) : null}
-                        onChange={(date) => handleUpdate('start_date', { start_date: date ? date.toISOString() : null })}
-                        trigger={
-                          <div className="k-date-trigger">
-                            <Icon name="calendar" size={14} />
-                            {task.start_date
-                              ? new Date(task.start_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
-                              : 'Ninguna'}
-                          </div>
-                        }
-                      />
+                      {isDeveloper ? (
+                        <div className="k-date-trigger" style={{ cursor: 'default' }}>
+                          <Icon name="calendar" size={14} />
+                          {task.start_date
+                            ? new Date(task.start_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : 'Ninguna'}
+                        </div>
+                      ) : (
+                        <DatePickerPopover
+                          value={task.start_date ? new Date(task.start_date) : null}
+                          onChange={(date) => handleUpdate('start_date', { start_date: date ? date.toISOString() : null })}
+                          trigger={
+                            <div className="k-date-trigger">
+                              <Icon name="calendar" size={14} />
+                              {task.start_date
+                                ? new Date(task.start_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'Ninguna'}
+                            </div>
+                          }
+                        />
+                      )}
                     </div>
                   </div>
 

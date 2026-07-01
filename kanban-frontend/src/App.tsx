@@ -118,7 +118,7 @@ function useKeyboardShortcuts() {
 /** Si el usuario debe cambiar su contraseña (RN-31), lo interceptamos aquí
  *  y lo redirigimos a /change-password independientemente de la ruta. */
 function ProtectedLayout() {
-  const { isAuthenticated, loading, mustChangePassword } = useAuth();
+  const { isAuthenticated, loading, mustChangePassword, user } = useAuth();
   const location = useLocation();
   useKeyboardShortcuts(); // Activar atajos en vistas protegidas
 
@@ -133,6 +133,11 @@ function ProtectedLayout() {
   // RN-31: forzar cambio de contraseña antes de acceder a cualquier recurso
   if (mustChangePassword && location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
+  }
+
+  // RN-35: Redirigir al Admin fuera de las pantallas operativas ordinarias a su ruta por defecto
+  if (user?.rol_global === 'Admin' && (location.pathname === '/' || location.pathname === '/projects')) {
+    return <Navigate to="/admin/users" replace />;
   }
 
   return (

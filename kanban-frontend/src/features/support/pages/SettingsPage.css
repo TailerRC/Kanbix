@@ -356,7 +356,7 @@
 
 .st-btn--primary {
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   box-shadow: var(--shadow-card);
 }
 

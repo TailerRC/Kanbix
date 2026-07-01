@@ -83,7 +83,7 @@
 .admin-users__btn-create {
   padding: 0.6rem 1.375rem;
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   border: none;
   border-radius: var(--radius-pill, 999px);
   font-size: 0.875rem;
@@ -210,9 +210,11 @@
 /* Fila bloqueada — leve tinte ámbar */
 .admin-users__row--locked {
   background: var(--color-warning-bg, #FEF3C7);
+  border-left: 3px solid var(--color-warning, #D97706);
 }
 .admin-users__row--locked:hover {
-  background: #fde68a !important;
+  background: var(--color-warning-bg, #FEF3C7) !important;
+  filter: brightness(0.95);
 }
 
 /* Cells específicos */
@@ -285,7 +287,8 @@
 }
 
 .admin-users__btn-unlock:hover {
-  background: #fde68a;
+  background: var(--color-warning-bg, #FEF3C7);
+  filter: brightness(0.92);
   border-color: var(--color-warning, #D97706);
 }
 
@@ -345,7 +348,7 @@
 
 .admin-users__page-btn:hover:not(:disabled) {
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   border-color: var(--color-primary, #111827);
 }
 
@@ -366,7 +369,7 @@
 .admin-modal__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.5);
+  background: var(--color-overlay, rgba(17, 24, 39, 0.5));
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -518,7 +521,7 @@
 .admin-modal__btn--submit {
   padding: 0.625rem 1.5rem;
   background: var(--color-primary, #111827);
-  color: #FFFFFF;
+  color: var(--color-primary-text, #FFFFFF);
   border: none;
   border-radius: var(--radius-pill, 999px);
   font-size: 0.875rem;
@@ -613,7 +616,8 @@
 }
 
 .admin-users__action-btn--unlock:hover {
-  background: #fde68a;
+  background: var(--color-warning-bg, #FEF3C7);
+  filter: brightness(0.92);
   border-color: var(--color-warning, #D97706);
   color: var(--color-warning, #D97706);
 }
@@ -641,4 +645,96 @@
   font-weight: 500;
   color: var(--color-text-primary, #111827);
   user-select: none;
+}
+
+/* Password requirements feedback (Nielsen H5/H10) */
+.admin-modal__password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.admin-modal__password-input-wrapper input {
+  padding-right: 2.75rem !important;
+}
+
+.admin-modal__password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-modal__password-toggle:hover {
+  background: var(--color-bg, #F3F4F6);
+  color: var(--color-text-primary, #111827);
+}
+
+/* ── Error inline en campo ── */
+.admin-modal__field--has-error input,
+.admin-modal__field--has-error select {
+  border-color: var(--color-error, #DC2626) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+.admin-modal__field-error {
+  color: var(--color-error, #DC2626);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* ── Barra de fortaleza de contraseña (H1 - Visibility) ── */
+.admin-modal__password-strength {
+  height: 4px;
+  background: var(--color-border, #E5E7EB);
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.admin-modal__password-strength-bar {
+  height: 100%;
+  background: var(--color-brand, #6366F1);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+.admin-modal__password-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.8rem;
+  margin-top: 0.6rem;
+  margin-bottom: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg, #F9FAFB);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 6px;
+}
+
+.admin-modal__rule {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6B7280);
+  transition: color 0.15s;
+}
+
+.admin-modal__rule-icon {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.admin-modal__rule--valid {
+  color: var(--color-success, #16A34A) !important;
+  font-weight: 500;
 }

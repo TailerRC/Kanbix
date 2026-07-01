@@ -1,0 +1,140 @@
+.tl-page {
+  padding: 4px;
+}
+
+.tl-error {
+  padding: 16px;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border-radius: 8px;
+}
+
+.tl-wrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tl-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.tl-board {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  overflow-x: auto;
+}
+
+/* Left list */
+.tl-left {
+  border-right: 1px solid var(--color-border);
+  min-width: 280px;
+}
+
+.tl-left__head,
+.tl-right__head {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.tl-left__row {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tl-left__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tl-left__name {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-left__assignee {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Right timeline */
+.tl-right {
+  position: relative;
+  min-width: 520px;
+}
+
+.tl-right__head {
+  display: block;
+}
+
+.tl-month {
+  position: absolute;
+  top: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+  border-left: 1px solid var(--color-border);
+  padding-left: 6px;
+  white-space: nowrap;
+}
+
+.tl-right__row {
+  position: relative;
+  height: 44px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tl-bar {
+  position: absolute;
+  top: 10px;
+  height: 24px;
+  min-width: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.tl-bar__label {
+  font-size: 11.5px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-bar__none {
+  position: absolute;
+  left: 10px;
+  top: 14px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}

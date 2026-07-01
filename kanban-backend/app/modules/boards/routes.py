@@ -56,6 +56,11 @@ async def update_column(board_id: str, column_id: str, payload: ColumnUpdate, cu
 
 
 # ---------- Tasks ----------
+@router.get("/projects/{project_id}/tasks")
+async def list_project_tasks(project_id: str, current=Depends(get_current_user)):
+    return await controller.list_project_tasks(get_database(), project_id, current)
+
+
 @router.post("/boards/{board_id}/tasks", status_code=status.HTTP_201_CREATED)
 async def create_task(board_id: str, payload: TaskCreate, current=Depends(get_current_user)):
     return await controller.create_task(get_database(), board_id, payload, current)

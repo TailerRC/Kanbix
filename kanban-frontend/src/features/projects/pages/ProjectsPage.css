@@ -252,8 +252,9 @@
 }
 
 /* Step 2 wide modal styling */
-.projects__modal--wide {
-  max-width: 800px;
+.projects__modal.projects__modal--wide {
+  max-width: 800px !important;
+  width: 100%;
   transition: max-width var(--transition-base);
 }
 

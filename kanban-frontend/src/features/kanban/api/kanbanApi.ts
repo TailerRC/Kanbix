@@ -20,6 +20,12 @@ export async function getBoardDetail(projectId: string, boardId: string): Promis
   return data;
 }
 
+/** Lista plana de todas las tareas del proyecto (Calendario y Cronograma). */
+export async function listProjectTasks(projectId: string): Promise<TaskCard[]> {
+  const { data } = await api.get<TaskCard[]>(`/projects/${projectId}/tasks`);
+  return data;
+}
+
 export async function createBoard(projectId: string, name: string, description?: string) {
   const { data } = await api.post(`/projects/${projectId}/boards`, { name, description });
   return data;

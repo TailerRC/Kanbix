@@ -4,7 +4,8 @@
  * Muestra todos los tickets del sistema con filtros por estado/tipo.
  * El Admin puede actualizar el estado y dejar una nota de resolución.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { getErrorMessage } from '../../../shared/api/api';
 import {
   adminListTickets,
   adminUpdateTicket,
@@ -67,8 +68,21 @@ function UpdateModal({ ticket, onClose, onSaved }: UpdateModalProps) {
   const [nota, setNota] = useState(ticket.nota_resolucion ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const estadoRef = useRef<HTMLSelectElement>(null);
 
   const ESTADOS: EstadoTicket[] = ['ABIERTO', 'EN_REVISION', 'RESUELTO', 'CERRADO'];
+
+  useEffect(() => {
+    estadoRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +92,7 @@ function UpdateModal({ ticket, onClose, onSaved }: UpdateModalProps) {
       onSaved(updated);
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Error al actualizar el ticket.');
+      setError(getErrorMessage(err, 'Error al actualizar el ticket.'));
       setSaving(false);
     }
   };
@@ -121,6 +135,7 @@ function UpdateModal({ ticket, onClose, onSaved }: UpdateModalProps) {
           <div className="ta-form-row">
             <label className="ta-form-label" htmlFor="ta-estado">Nuevo estado</label>
             <select
+              ref={estadoRef}
               id="ta-estado"
               className="ta-form-select"
               value={estado}

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../../../shared/components/Icon';
+import ProjectTabs from '../../../shared/components/ProjectTabs';
 import type { TaskCard, Prioridad } from '../../../shared/types';
 import { BoardProvider, useBoard } from '../context/BoardContext';
 import TaskDetailModal from '../components/TaskDetailModal';
+import SprintEditModal from '../components/SprintEditModal';
 import './BacklogPage.css';
 
 const PRIORITY_COLOR: Record<Prioridad, string> = {
@@ -28,14 +30,22 @@ function getInitials(name: string | null | undefined): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+interface Member {
+  user_id: string;
+  nombre_completo: string;
+}
+
 interface BacklogRowProps {
   task: TaskCard;
   columnName: string;
   columns: { id: string; name: string }[];
+  members: Member[];
   onOpenDetail: (id: string) => void;
+  onDragStartTask: (taskId: string) => void;
+  onDragEndTask: () => void;
 }
 
-function BacklogRow({ task, columnName, columns, onOpenDetail }: BacklogRowProps) {
+function BacklogRow({ task, columnName, columns, members, onOpenDetail, onDragStartTask, onDragEndTask }: BacklogRowProps) {
   const { updateTaskOptimistic } = useBoard();
   const priority = (task.priority || 'Media') as Prioridad;
   const statusStyle = STATUS_COLORS[columnName] ?? { bg: '#F1F5F9', color: '#475569' };
@@ -52,11 +62,28 @@ function BacklogRow({ task, columnName, columns, onOpenDetail }: BacklogRowProps
   }
 
   const handleStatusChange = (colId: string) => {
-    updateTaskOptimistic(task.id, { column_id: colId });
+    updateTaskOptimistic(task.id, { column_id: colId }).catch((err: any) =>
+      alert('No se pudo cambiar el estado: ' + (err?.response?.data?.detail ?? err?.message ?? ''))
+    );
+  };
+
+  const handleAssign = (userId: string) => {
+    if (userId === (task.assignee_id ?? '')) return;
+    const member = members.find((m) => m.user_id === userId);
+    updateTaskOptimistic(task.id, {
+      assignee_id: userId || null,
+      assignee: member ? member.nombre_completo : null,
+    }).catch((err: any) => alert('No se pudo asignar: ' + (err?.message ?? 'permiso denegado (requiere Manager)')));
   };
 
   return (
-    <tr className="bl-row" onDoubleClick={() => onOpenDetail(task.id)}>
+    <tr
+      className="bl-row"
+      draggable
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; onDragStartTask(task.id); }}
+      onDragEnd={onDragEndTask}
+      onDoubleClick={() => onOpenDetail(task.id)}
+    >
       <td className="bl-cell bl-cell--check">
         <input type="checkbox" className="bl-checkbox" onClick={(e) => e.stopPropagation()} />
         <span className="bl-type-icon" title={task.task_type || 'Tarea'}>
@@ -109,13 +136,27 @@ function BacklogRow({ task, columnName, columns, onOpenDetail }: BacklogRowProps
       </td>
 
       <td className="bl-cell bl-cell--assignee">
-        {task.assignee ? (
-          <span className="bl-avatar" title={task.assignee}>{getInitials(task.assignee)}</span>
-        ) : (
-          <span className="bl-avatar bl-avatar--empty" title="Sin asignar">
-            <Icon name="user" size={12} />
-          </span>
-        )}
+        <div className="bl-assignee" title={task.assignee || 'Sin asignar'}>
+          {task.assignee ? (
+            <span className="bl-avatar">{getInitials(task.assignee)}</span>
+          ) : (
+            <span className="bl-avatar bl-avatar--empty">
+              <Icon name="user" size={12} />
+            </span>
+          )}
+          <select
+            className="bl-assignee-select"
+            value={task.assignee_id ?? ''}
+            onChange={(e) => handleAssign(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Asignar responsable"
+          >
+            <option value="">Sin asignar</option>
+            {members.map((m) => (
+              <option key={m.user_id} value={m.user_id}>{m.nombre_completo}</option>
+            ))}
+          </select>
+        </div>
       </td>
     </tr>
   );
@@ -124,19 +165,27 @@ function BacklogRow({ task, columnName, columns, onOpenDetail }: BacklogRowProps
 interface SprintGroupProps {
   tasks: TaskCard[];
   columns: { id: string; name: string }[];
+  members: Member[];
   sprint: any | null; // null means backlog
   isBacklog?: boolean;
   onOpenDetail: (id: string) => void;
   onStartSprint?: (sprintId: string) => void;
   onCompleteSprint?: (sprintId: string) => void;
+  onEditSprint?: (sprint: any) => void;
+  onDropTask: (target: string | null) => void;
+  onDragStartTask: (taskId: string) => void;
+  onDragEndTask: () => void;
+  isDragging: boolean;
 }
 
-function SprintGroup({ tasks, columns, sprint, isBacklog = false, onOpenDetail, onStartSprint, onCompleteSprint }: SprintGroupProps) {
+function SprintGroup({ tasks, columns, members, sprint, isBacklog = false, onOpenDetail, onStartSprint, onCompleteSprint, onEditSprint, onDropTask, onDragStartTask, onDragEndTask, isDragging }: SprintGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [dragOver, setDragOver] = useState(false);
   const { createTaskOptimistic } = useBoard();
   const total = tasks.length;
+  const target: string | null = isBacklog ? null : sprint?.id ?? null;
 
   const handleCreate = async () => {
     if (!newTitle.trim()) {
@@ -145,7 +194,7 @@ function SprintGroup({ tasks, columns, sprint, isBacklog = false, onOpenDetail, 
     }
     const firstCol = columns.find(c => c.name.toLowerCase() !== 'backlog');
     if (firstCol) {
-      await createTaskOptimistic(firstCol.id, newTitle.trim(), { sprint_id: sprint ? sprint.id : null });
+      await createTaskOptimistic(firstCol.id, newTitle.trim(), 'Media', undefined, undefined, sprint ? sprint.id : null);
     }
     setNewTitle('');
     setIsCreating(false);
@@ -159,7 +208,15 @@ function SprintGroup({ tasks, columns, sprint, isBacklog = false, onOpenDetail, 
   });
 
   return (
-    <section className="bl-sprint-group">
+    <section
+      className={`bl-sprint-group ${dragOver ? 'bl-sprint-group--dragover' : ''} ${isDragging ? 'bl-sprint-group--droppable' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); if (!dragOver) setDragOver(true); }}
+      onDragLeave={(e) => {
+        // Solo desactivar si el puntero sale realmente de la sección
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false);
+      }}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); onDropTask(target); }}
+    >
       <div className="bl-sprint-header">
         <button
           className="bl-sprint-collapse"
@@ -175,12 +232,20 @@ function SprintGroup({ tasks, columns, sprint, isBacklog = false, onOpenDetail, 
         <span className="bl-sprint-name">{isBacklog ? 'Backlog' : sprint.name} {sprint?.state === 'active' ? '(Activo)' : ''}</span>
         
         {!isBacklog && sprint?.start_date && sprint?.end_date && (
-          <span className="bl-sprint-dates">
+          <button className="bl-sprint-dates" onClick={() => onEditSprint?.(sprint)} title="Editar sprint">
             {new Date(sprint.start_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })} - {new Date(sprint.end_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
-          </span>
+          </button>
         )}
         {!isBacklog && (!sprint?.start_date || !sprint?.end_date) && (
-          <span className="bl-sprint-dates bl-sprint-dates--empty">Añadir fechas</span>
+          <button className="bl-sprint-dates bl-sprint-dates--empty" onClick={() => onEditSprint?.(sprint)}>
+            + Añadir fechas
+          </button>
+        )}
+
+        {!isBacklog && onEditSprint && (
+          <button className="bl-sprint-edit" onClick={() => onEditSprint(sprint)} title="Editar sprint" aria-label="Editar sprint">
+            <Icon name="edit" size={13} />
+          </button>
         )}
 
         <span className="bl-sprint-count">({total} {total === 1 ? 'actividad' : 'actividades'})</span>
@@ -251,7 +316,10 @@ function SprintGroup({ tasks, columns, sprint, isBacklog = false, onOpenDetail, 
                   task={task}
                   columnName={task.status ?? 'To Do'}
                   columns={columns}
+                  members={members}
                   onOpenDetail={onOpenDetail}
+                  onDragStartTask={onDragStartTask}
+                  onDragEndTask={onDragEndTask}
                 />
               ))
             )}
@@ -296,6 +364,10 @@ function BacklogContent() {
   const { project, board, sprints, loading, error, loadBoard, loadSprints } = useBoard();
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [completingSprint, setCompletingSprint] = useState<{ id: string, name: string } | null>(null);
+  const [editingSprint, setEditingSprint] = useState<any | null>(null);
+  const [search, setSearch] = useState('');
+  const [moveTarget, setMoveTarget] = useState<string>('backlog');
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const { updateTaskOptimistic } = useBoard();
 
   useEffect(() => {
@@ -315,18 +387,66 @@ function BacklogContent() {
     .filter((c) => c.name.toLowerCase() !== 'backlog')
     .map((c) => ({ id: c.id, name: c.name }));
 
-  const allTasks = board.columns
+  const allTasksRaw = board.columns
     .filter((c) => c.name.toLowerCase() !== 'backlog')
     .flatMap((c) => c.tasks.map((t) => ({ ...t, status: c.name })));
 
+  const q = search.trim().toLowerCase();
+  const allTasks = q
+    ? allTasksRaw.filter((t) => t.title.toLowerCase().includes(q))
+    : allTasksRaw;
+
   const backlogTasks = allTasks.filter(t => !t.sprint_id);
-  
-  const totalTasks = allTasks.length;
+
+  const totalTasks = allTasksRaw.length;
+
+  const members = (project.members ?? []).map((m) => ({ user_id: m.user_id, nombre_completo: m.nombre_completo }));
+
+  // Validación: no se puede crear un nuevo sprint mientras exista uno sin cerrar.
+  const unfinishedSprint = sprints.find((s) => s.state !== 'completed');
+
+  const handleDropTask = (target: string | null) => {
+    const taskId = dragTaskId;
+    setDragTaskId(null);
+    if (!taskId) return;
+    const task = allTasksRaw.find((t) => t.id === taskId);
+    if (!task) return;
+    const current = task.sprint_id ?? null;
+    if (current === target) return;
+    // Validación: no mover tareas a un sprint ya cerrado.
+    if (target) {
+      const dest = sprints.find((s) => s.id === target);
+      if (dest?.state === 'completed') {
+        alert('No puedes mover tareas a un sprint ya cerrado.');
+        return;
+      }
+    }
+    updateTaskOptimistic(taskId, { sprint_id: target }).catch((err: any) =>
+      alert('No se pudo mover la tarea: ' + (err?.message ?? ''))
+    );
+  };
 
   const handleCreateSprint = async () => {
+    // RN: solo un sprint sin cerrar a la vez (no crear si hay pendiente/activo).
+    if (unfinishedSprint) {
+      alert(
+        `No puedes crear un nuevo sprint mientras "${unfinishedSprint.name}" no esté completado. ` +
+        `Completa o cierra el sprint actual primero.`
+      );
+      return;
+    }
     const num = sprints.length + 1;
+    // Fechas por defecto: hoy → +14 días (ciclo Scrum de 2 semanas).
+    const start = new Date();
+    const end = new Date(Date.now() + 14 * 86400000);
     try {
-      await import('../../planning/api/planningApi').then(m => m.planningApi.createSprint(projectId!, { name: `Sprint ${num}` }));
+      await import('../../planning/api/planningApi').then(m =>
+        m.planningApi.createSprint(projectId!, {
+          name: `Sprint ${num}`,
+          start_date: new Date(start.getFullYear(), start.getMonth(), start.getDate(), 12).toISOString(),
+          end_date: new Date(end.getFullYear(), end.getMonth(), end.getDate(), 12).toISOString(),
+        })
+      );
       loadSprints(projectId!);
     } catch (err: any) {
       alert('Error al crear el sprint: ' + err.message);
@@ -334,17 +454,32 @@ function BacklogContent() {
   };
 
   const handleStartSprint = async (sprintId: string) => {
+    const sprint = sprints.find((s) => s.id === sprintId);
+    // Validación: el sprint necesita fechas antes de iniciarse (para burndown).
+    if (sprint && (!sprint.start_date || !sprint.end_date)) {
+      alert('Añade fecha de inicio y fin al sprint antes de iniciarlo.');
+      setEditingSprint(sprint);
+      return;
+    }
+    // Validación: no puede haber dos sprints activos a la vez.
+    if (sprints.some((s) => s.state === 'active')) {
+      alert('Ya hay un sprint activo. Complétalo antes de iniciar otro.');
+      return;
+    }
     try {
       await import('../../planning/api/planningApi').then(m => m.planningApi.startSprint(sprintId));
       loadSprints(projectId!);
     } catch (err: any) {
-      alert('Error al iniciar el sprint: ' + err.message);
+      alert('Error al iniciar el sprint: ' + (err?.response?.data?.detail ?? err.message));
     }
   };
 
   const handleCompleteSprint = (sprintId: string) => {
     const sprint = sprints.find(s => s.id === sprintId);
-    if (sprint) setCompletingSprint({ id: sprint.id, name: sprint.name });
+    if (sprint) {
+      setMoveTarget('backlog');
+      setCompletingSprint({ id: sprint.id, name: sprint.name });
+    }
   };
 
   const confirmCompleteSprint = async (moveToSprintId: string | null) => {
@@ -369,32 +504,37 @@ function BacklogContent() {
   return (
     <div className="bl-page">
       <header className="bl-header">
-        <div className="bl-header-left">
-          <h1 className="bl-title">{project.name} — Backlog</h1>
-          <p className="bl-subtitle">{totalTasks} tareas en total</p>
+        <div className="bl-header-top">
+          <div className="bl-header-left">
+            <h1 className="bl-title">{project.name} — Backlog</h1>
+            <p className="bl-subtitle">{totalTasks} tareas en total</p>
+          </div>
+          <div className="bl-header-tools">
+            <div className="bl-search">
+              <Icon name="search" size={15} />
+              <input
+                type="text"
+                placeholder="Buscar en el backlog…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button className="bl-search__clear" onClick={() => setSearch('')} aria-label="Limpiar">
+                  <Icon name="x" size={13} />
+                </button>
+              )}
+            </div>
+            <button
+              className="k-btn-primary"
+              onClick={handleCreateSprint}
+              disabled={!!unfinishedSprint}
+              title={unfinishedSprint ? `Completa "${unfinishedSprint.name}" antes de crear otro sprint` : 'Crear un nuevo sprint'}
+            >
+              <Icon name="plus" size={14} /> Crear Sprint
+            </button>
+          </div>
         </div>
-        <nav className="bl-header-tabs" aria-label="Vistas del proyecto">
-          <button className="k-btn-secondary" onClick={() => setAddingTaskColId(allColumns.find(c => c.name.toLowerCase() === 'backlog')?.id!)} style={{ marginRight: 8 }}>
-            <Icon name="plus" size={14} /> Nueva Tarea
-          </button>
-          <button className="k-btn-primary" onClick={handleCreateSprint} style={{ marginRight: 16 }}>
-            <Icon name="plus" size={14} /> Crear Sprint
-          </button>
-          <button
-            id="tab-backlog"
-            className="bl-tab bl-tab--active"
-            onClick={() => navigate(`/proyectos/${projectId}/backlog`)}
-          >
-            <Icon name="list" size={14} /> Backlog
-          </button>
-          <button
-            id="tab-tablero"
-            className="bl-tab"
-            onClick={() => navigate(`/proyectos/${projectId}/tablero`)}
-          >
-            <Icon name="layout" size={14} /> Tablero
-          </button>
-        </nav>
+        <ProjectTabs projectId={projectId!} />
       </header>
 
       <div className="bl-body">
@@ -405,10 +545,16 @@ function BacklogContent() {
               key={sprint.id}
               tasks={sprintTasks}
               columns={allColumns}
+              members={members}
               sprint={sprint}
               onOpenDetail={setEditingTaskId}
               onStartSprint={handleStartSprint}
               onCompleteSprint={handleCompleteSprint}
+              onEditSprint={setEditingSprint}
+              onDropTask={handleDropTask}
+              onDragStartTask={setDragTaskId}
+              onDragEndTask={() => setDragTaskId(null)}
+              isDragging={dragTaskId !== null}
             />
           );
         })}
@@ -416,9 +562,14 @@ function BacklogContent() {
         <SprintGroup
           tasks={backlogTasks}
           columns={allColumns}
+          members={members}
           sprint={null}
           isBacklog
           onOpenDetail={setEditingTaskId}
+          onDropTask={handleDropTask}
+          onDragStartTask={setDragTaskId}
+          onDragEndTask={() => setDragTaskId(null)}
+          isDragging={dragTaskId !== null}
         />
       </div>
 
@@ -427,20 +578,47 @@ function BacklogContent() {
       )}
 
       {completingSprint && (
-        <div className="k-modal-overlay">
-          <div className="k-modal-content" style={{ maxWidth: 400, padding: 24 }}>
-            <h2 style={{ margin: '0 0 16px 0' }}>Completar {completingSprint.name}</h2>
-            <p style={{ margin: '0 0 24px 0', color: 'var(--color-text-muted)' }}>
-              ¿A dónde quieres mover las tareas incompletas?
+        <div className="k-modal-overlay" onClick={() => setCompletingSprint(null)}>
+          <div className="k-modal-content" style={{ maxWidth: 420, padding: 24 }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 8px 0' }}>Completar {completingSprint.name}</h2>
+            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text-muted)' }}>
+              Las tareas no finalizadas se moverán a:
             </p>
+            <select
+              className="bl-status-select"
+              value={moveTarget}
+              onChange={(e) => setMoveTarget(e.target.value)}
+              style={{ width: '100%', marginBottom: 24, padding: '9px 11px' }}
+            >
+              <option value="backlog">Backlog</option>
+              {sprints
+                .filter((s) => s.id !== completingSprint.id && s.state !== 'completed')
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+            </select>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button className="k-btn-text" onClick={() => setCompletingSprint(null)}>Cancelar</button>
-              <button className="k-btn-primary" onClick={() => confirmCompleteSprint(null)}>
-                Mover al Backlog
+              <button
+                className="k-btn-primary"
+                onClick={() => confirmCompleteSprint(moveTarget === 'backlog' ? null : moveTarget)}
+              >
+                Completar sprint
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {editingSprint && (
+        <SprintEditModal
+          sprint={editingSprint}
+          onClose={() => setEditingSprint(null)}
+          onSaved={() => loadSprints(projectId!)}
+          onDeleted={() => { loadSprints(projectId!); loadBoard(projectId!); }}
+        />
       )}
     </div>
   );

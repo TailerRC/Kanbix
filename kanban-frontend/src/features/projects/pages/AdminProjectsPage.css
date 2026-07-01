@@ -1,5 +1,5 @@
 .admin-projects {
-  padding: 24px;
+  padding: 2rem 2.5rem;
   animation: fadeIn 0.4s ease both;
 }
 
@@ -91,7 +91,7 @@
 .admin-projects__table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm, 8px);
 }
 
 .admin-projects__table {
@@ -113,8 +113,17 @@
   font-weight: var(--fw-semibold, 600);
 }
 
+.admin-projects__th-actions {
+  width: 80px;
+  text-align: center;
+}
+
+.admin-projects__td-actions {
+  text-align: center;
+}
+
 .admin-projects__table tbody tr:hover {
-  background-color: rgba(99, 102, 241, 0.01);
+  background-color: var(--color-bg, #f8fafc);
 }
 
 .admin-projects__name {
@@ -176,7 +185,7 @@
   padding: 6px 14px;
   background-color: var(--color-bg, #f8fafc);
   border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 20px;
+  border-radius: var(--radius-pill, 999px);
   font-size: 0.8rem;
   font-weight: var(--fw-semibold, 600);
   color: var(--color-text-primary, #0f172a);
@@ -260,18 +269,21 @@
 }
 
 .admin-status__badge--operational {
-  background-color: rgba(16, 185, 129, 0.08);
-  color: #10b981;
+  background-color: var(--color-success-bg, rgba(16, 185, 129, 0.08));
+  color: var(--color-success, #10b981);
+  border: 1px solid var(--color-success-border, transparent);
 }
 
 .admin-status__badge--degraded {
-  background-color: rgba(245, 158, 11, 0.08);
-  color: #f59e0b;
+  background-color: var(--color-warning-bg, rgba(245, 158, 11, 0.08));
+  color: var(--color-warning, #f59e0b);
+  border: 1px solid var(--color-warning-border, transparent);
 }
 
 .admin-status__badge--down {
-  background-color: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
+  background-color: var(--color-error-bg, rgba(239, 68, 68, 0.08));
+  color: var(--color-error, #ef4444);
+  border: 1px solid var(--color-error-border, transparent);
 }
 
 .admin-status__footer {
@@ -285,10 +297,10 @@
 }
 
 /* ---- Modal confirmation styling ---- */
-.projects__overlay {
+.admin-projects__delete-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(17, 24, 39, 0.45);
+  background-color: var(--color-overlay, rgba(17, 24, 39, 0.45));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +309,7 @@
   animation: fadeIn 0.2s ease both;
 }
 
-.projects__modal {
+.admin-projects__delete-modal {
   background-color: var(--color-surface, #ffffff);
   border-radius: var(--radius-lg, 12px);
   box-shadow: var(--shadow-modal, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04));
@@ -310,17 +322,89 @@
   animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.projects__modal-title {
+.admin-projects__delete-modal-title {
   font-size: var(--fs-h1, 1.35rem);
   font-weight: var(--fw-bold, 700);
   margin: 0;
 }
 
-.projects__modal-actions {
+.admin-projects__delete-modal-title--danger {
+  color: var(--color-error, #ef4444);
+}
+
+.admin-projects__delete-modal-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0;
+}
+
+.admin-projects__delete-modal-warning {
+  padding: 10px 14px;
+  background-color: var(--color-error-bg, #fef2f2);
+  border-left: 3px solid var(--color-error, #ef4444);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--color-error, #ef4444);
+  line-height: 1.4;
+}
+
+.admin-projects__delete-modal-error {
+  padding: 10px 14px;
+  background-color: var(--color-error-bg, #fef2f2);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--color-error, #dc2626);
+  font-weight: 500;
+}
+
+.admin-projects__delete-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 4px;
+}
+
+.admin-projects__delete-btn-cancel {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text-primary, #0f172a);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.admin-projects__delete-btn-cancel:hover:not(:disabled) {
+  background: var(--color-bg, #f8fafc);
+  border-color: var(--color-text-muted, #94a3b8);
+}
+
+.admin-projects__delete-btn-confirm {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm, 6px);
+  background-color: var(--color-error, #ef4444);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.admin-projects__delete-btn-confirm:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.admin-projects__delete-btn-confirm:disabled,
+.admin-projects__delete-btn-cancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 @keyframes scaleIn {

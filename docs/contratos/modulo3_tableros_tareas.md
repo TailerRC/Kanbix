@@ -548,6 +548,40 @@ Obtiene todos los comentarios de una tarea, ordenados por fecha de creación.
 
 ---
 
+### GET /api/v1/projects/{project_id}/tasks
+
+Lista **plana** de todas las tareas del proyecto (sin agrupar por columna). La consumen las vistas **Calendario** y **Cronograma**.
+
+**Auth:** Viewer+ (miembro del proyecto).
+
+#### Response — 200 OK
+
+```json
+[
+  {
+    "id": "64f...",
+    "title": "arqui",
+    "description": null,
+    "status": "In Progress",
+    "priority": "Media",
+    "assignee": "Jerzy R.",
+    "assignee_id": "64f...",
+    "due_date": "2026-07-10T00:00:00Z",
+    "start_date": "2026-07-01T00:00:00Z",
+    "story_points": 5,
+    "sprint_id": "64f...",
+    "column_id": "64f...",
+    "board_id": "64f...",
+    "task_type": "Tarea",
+    "tags": []
+  }
+]
+```
+
+> Para **planificar en Calendario/Cronograma** se usa `PATCH /api/v1/tasks/{task_id}` con `due_date` y/o `start_date`.
+
+---
+
 ## Resumen de Endpoints
 
 | # | Método | Ruta | Descripción |

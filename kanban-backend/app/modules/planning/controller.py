@@ -50,3 +50,7 @@ async def start_sprint(db, sprint_id, current):
 
 async def complete_sprint(db, sprint_id, current):
     return await service.complete_sprint(db, sprint_id, current)
+
+
+async def delete_sprint(db, sprint_id, current):
+    return await service.delete_sprint(db, sprint_id, current)

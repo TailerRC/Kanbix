@@ -6,6 +6,7 @@
 
 | Archivo | Descripción |
 |---------|-------------|
+| [documentacion_tecnica_unificada.md](./documentacion_tecnica_unificada.md) | Documentación técnica consolidada del proyecto |
 | [kanbix_context.md](./kanbix_context.md) | Contexto unificado del proyecto |
 | [reglas_negocio.md](./reglas_negocio.md) | 30 reglas de negocio |
 | [glosario.md](./glosario.md) | Términos del dominio |

@@ -168,11 +168,14 @@ function BoardContent() {
   // CAMBIO (PARTE 1 — PASO 6): activeSprint ya NO controla la visibilidad del tablero.
   // Se desestructura del contexto por si otros efectos secundarios lo usan, pero
   // NO se usa para condicionar el render de columnas ni filtrar tareas.
-  const { project, board, loading, error, loadBoard, moveTaskOptimistic } = useBoard();
+  const { project, board, sprints, activeSprint, loading, error, loadBoard, loadSprints, moveTaskOptimistic, updateTaskOptimistic } = useBoard();
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
   const [addingTaskColId, setAddingTaskColId] = useState<string | null>(null);
   const [activeCard, setActiveCard] = useState<UITaskCard | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
+  const [moveTarget, setMoveTarget] = useState('backlog');
+  const [completingBusy, setCompletingBusy] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -204,6 +207,32 @@ function BoardContent() {
 
     if (activeColumnId !== overColumnId) {
       moveTaskOptimistic(activeId, overColumnId as string);
+    }
+  };
+
+  const openComplete = () => {
+    setMoveTarget('backlog');
+    setCompleting(true);
+  };
+
+  const confirmComplete = async () => {
+    if (!activeSprint || !board) return;
+    setCompletingBusy(true);
+    try {
+      const incomplete = board.columns
+        .flatMap((c) => c.tasks.map((t) => ({ ...t, status: c.name })))
+        .filter((t) => t.sprint_id === activeSprint.id && t.status !== 'Done');
+      for (const task of incomplete) {
+        await updateTaskOptimistic(task.id, { sprint_id: moveTarget === 'backlog' ? null : moveTarget });
+      }
+      const { planningApi } = await import('../../planning/api/planningApi');
+      await planningApi.completeSprint(activeSprint.id);
+      await loadSprints(projectId!);
+      setCompleting(false);
+    } catch (err: any) {
+      alert('No se pudo completar el sprint: ' + (err?.message ?? ''));
+    } finally {
+      setCompletingBusy(false);
     }
   };
 
@@ -265,6 +294,8 @@ function BoardContent() {
           }
         }}
         projectId={projectId}
+        activeSprintName={activeSprint?.name ?? null}
+        onCompleteSprint={openComplete}
       />
 
       {/* CAMBIO (PASO 1): DndContext se renderiza siempre, sin condición de sprint */}
@@ -346,6 +377,35 @@ function BoardContent() {
 
       {editingTaskId && (
         <TaskDetailModal taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />
+      )}
+
+      {completing && activeSprint && (
+        <div className="k-modal-overlay" onClick={() => !completingBusy && setCompleting(false)}>
+          <div className="k-modal-content" style={{ maxWidth: 420, padding: 24 }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 8px 0' }}>Completar {activeSprint.name}</h2>
+            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text-muted)' }}>
+              Las tareas no finalizadas se moverán a:
+            </p>
+            <select
+              value={moveTarget}
+              onChange={(e) => setMoveTarget(e.target.value)}
+              style={{ width: '100%', marginBottom: 24, padding: '9px 11px', borderRadius: 8, border: '1px solid var(--color-border)' }}
+            >
+              <option value="backlog">Backlog</option>
+              {sprints
+                .filter((s) => s.id !== activeSprint.id && s.state !== 'completed')
+                .map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+            </select>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button className="k-btn-text" onClick={() => setCompleting(false)} disabled={completingBusy}>Cancelar</button>
+              <button className="k-btn-primary" onClick={confirmComplete} disabled={completingBusy}>
+                {completingBusy ? 'Completando…' : 'Completar sprint'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

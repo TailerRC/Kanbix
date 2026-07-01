@@ -45,6 +45,8 @@ def new_task_document(
     due_date: datetime | None,
     tags: list[str],
     position: int,
+    start_date: datetime | None = None,
+    sprint_id: ObjectId | None = None,
 ) -> dict:
     now = datetime.now(timezone.utc)
     return {
@@ -58,9 +60,10 @@ def new_task_document(
         "assignee_id": assignee_id,
         "creator_id": creator_id,
         "due_date": due_date,
+        "start_date": start_date,
         "story_points": None,
         "tags": tags,
-        "sprint_id": None,
+        "sprint_id": sprint_id,
         "subtasks": [],
         "dependencies": [],
         "position": position,

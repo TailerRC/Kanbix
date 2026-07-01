@@ -230,6 +230,23 @@ async def start_sprint(db, sprint_id: str, current_user: dict) -> dict:
     }
 
 
+async def delete_sprint(db, sprint_id: str, current_user: dict) -> dict:
+    oid = to_object_id(sprint_id, "sprint_id", "Sprint")
+    sprint = await db.sprints.find_one({"_id": oid})
+    if sprint is None:
+        raise APIError(404, "Sprint no encontrado", "sprint_id")
+
+    await ensure_project_access(db, sprint["project_id"], current_user, "Manager")
+
+    if sprint.get("state") == "active":
+        raise APIError(400, "No se puede eliminar un sprint activo; complétalo primero", "state")
+
+    # Devolver las tareas del sprint al backlog (sprint_id = None).
+    await db.tasks.update_many({"sprint_id": oid}, {"$set": {"sprint_id": None}})
+    await db.sprints.delete_one({"_id": oid})
+    return {"message": "Sprint eliminado exitosamente"}
+
+
 async def complete_sprint(db, sprint_id: str, current_user: dict) -> dict:
     oid = to_object_id(sprint_id, "sprint_id", "Sprint")
     sprint = await db.sprints.find_one({"_id": oid})

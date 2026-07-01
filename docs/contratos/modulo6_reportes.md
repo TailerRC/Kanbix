@@ -118,13 +118,78 @@ Calcula cuántas tareas tiene asignadas cada miembro del equipo y su estado actu
 
 ---
 
+---
+
+### GET /api/v1/projects/{project_id}/dashboard/overview
+
+Métricas de la pestaña **Resumen**: tarjetas de actividad de los últimos/próximos 7 días, distribuciones para gráficos de torta y actividad reciente.
+
+**Auth:** Requiere token JWT. **Rol mínimo:** Viewer+ (miembro del proyecto).
+
+#### Response — 200 OK
+
+```json
+{
+  "metrics_7d": { "created": 14, "updated": 14, "completed": 6, "due_soon": 0 },
+  "by_status":   [{ "status": "To Do", "count": 5 }],
+  "by_type":     [{ "type": "Tarea", "count": 12 }],
+  "by_assignee": [{ "assignee_id": "64f...", "name": "Jerzy R.", "count": 8 }],
+  "recent_activity": [
+    { "task_id": "64f...", "title": "HOLA", "status": "To Do", "assignee": "Jerzy R.", "updated_at": "2026-06-30T18:00:00Z" }
+  ]
+}
+```
+
+- `metrics_7d.created/updated`: tareas con `created_at`/`updated_at` en los últimos 7 días.
+- `metrics_7d.completed`: tareas en `Done` actualizadas en los últimos 7 días.
+- `metrics_7d.due_soon`: tareas no completadas con `due_date` en los próximos 7 días.
+- `recent_activity`: últimas 10 tareas del proyecto por `updated_at` descendente.
+
+---
+
+### GET /api/v1/projects/{project_id}/sprints/{sprint_id}/burnup
+
+Gráfico **Burnup**: alcance total del sprint vs trabajo completado acumulado por día.
+
+**Auth:** Viewer+ (miembro del proyecto).
+
+#### Response — 200 OK
+
+```json
+[
+  { "date": "2026-06-30", "scope": 40, "completed": 0 },
+  { "date": "2026-07-01", "scope": 40, "completed": 8 }
+]
+```
+
+---
+
+### GET /api/v1/projects/{project_id}/reports/velocity
+
+**Velocity Chart**: puntos comprometidos vs completados por cada sprint cerrado (`state = completed`), ordenados por fecha de fin.
+
+**Auth:** Manager+ (rendimiento del equipo, RF83).
+
+#### Response — 200 OK
+
+```json
+[
+  { "sprint_id": "64f...", "sprint_name": "Sprint 4", "committed_points": 34, "completed_points": 30 }
+]
+```
+
+---
+
 ## Resumen de Endpoints
 
-| # | Método | Ruta | Descripción |
-|---|--------|------|-------------|
-| 1 | GET | /api/v1/projects/{project_id}/dashboard/summary | Métricas generales del dashboard |
-| 2 | GET | /api/v1/projects/{project_id}/sprints/{sprint_id}/burndown | Datos para gráfico Burndown |
-| 3 | GET | /api/v1/projects/{project_id}/reports/workload | Distribución de tareas por usuario |
+| # | Método | Ruta | Descripción | Rol |
+|---|--------|------|-------------|-----|
+| 1 | GET | /api/v1/projects/{project_id}/dashboard/summary | Métricas generales del dashboard | Viewer+ |
+| 2 | GET | /api/v1/projects/{project_id}/dashboard/overview | Métricas de la pestaña Resumen (7d, distribuciones, actividad) | Viewer+ |
+| 3 | GET | /api/v1/projects/{project_id}/sprints/{sprint_id}/burndown | Datos para gráfico Burndown | Viewer+ |
+| 4 | GET | /api/v1/projects/{project_id}/sprints/{sprint_id}/burnup | Datos para gráfico Burnup | Viewer+ |
+| 5 | GET | /api/v1/projects/{project_id}/reports/velocity | Velocidad del equipo por sprint cerrado | Manager+ |
+| 6 | GET | /api/v1/projects/{project_id}/reports/workload | Distribución de tareas por usuario | Manager+ |
 
 ## Formato Estándar de Errores
 

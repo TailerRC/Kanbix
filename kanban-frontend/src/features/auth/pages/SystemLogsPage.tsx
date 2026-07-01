@@ -3,7 +3,7 @@
  *
  * Muestra el registro inmutable de acciones sensibles de Kanbix (RN-33).
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdminLogs } from '../hooks/useAdminLogs';
 import './SystemLogsPage.css';
 
@@ -84,6 +84,15 @@ export default function SystemLogsPage() {
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
   const totalPages = Math.ceil(total / limit) || 1;
+
+  useEffect(() => {
+    if (!selectedLog) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedLog(null);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedLog]);
 
 
   return (

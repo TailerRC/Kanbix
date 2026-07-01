@@ -9,10 +9,14 @@ import TicketsAdminPage from './features/auth/pages/TicketsAdminPage';
 import ProfilePage from './features/auth/pages/ProfilePage';
 import ChangePasswordPage from './features/auth/pages/ChangePasswordPage';
 import DashboardPage from './features/reports/pages/DashboardPage';
+import ProjectResumenPage from './features/reports/pages/ProjectResumenPage';
+import InformesPage from './features/reports/pages/InformesPage';
 import ProjectsPage from './features/projects/pages/ProjectsPage';
 import AdminProjectsPage from './features/projects/pages/AdminProjectsPage';
 import BoardPage from './features/kanban/pages/BoardPage';
 import BacklogPage from './features/kanban/pages/BacklogPage';
+import CalendarPage from './features/kanban/pages/CalendarPage';
+import TimelinePage from './features/kanban/pages/TimelinePage';
 import HealthCheck from './components/HealthCheck';
 import HelpPage from './features/support/pages/HelpPage';
 import SettingsPage from './features/support/pages/SettingsPage';
@@ -114,7 +118,7 @@ function useKeyboardShortcuts() {
 /** Si el usuario debe cambiar su contraseña (RN-31), lo interceptamos aquí
  *  y lo redirigimos a /change-password independientemente de la ruta. */
 function ProtectedLayout() {
-  const { isAuthenticated, loading, mustChangePassword } = useAuth();
+  const { isAuthenticated, loading, mustChangePassword, user } = useAuth();
   const location = useLocation();
   useKeyboardShortcuts(); // Activar atajos en vistas protegidas
 
@@ -129,6 +133,11 @@ function ProtectedLayout() {
   // RN-31: forzar cambio de contraseña antes de acceder a cualquier recurso
   if (mustChangePassword && location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
+  }
+
+  // RN-35: Redirigir al Admin fuera de las pantallas operativas ordinarias a su ruta por defecto
+  if (user?.rol_global === 'Admin' && (location.pathname === '/' || location.pathname === '/projects')) {
+    return <Navigate to="/admin/users" replace />;
   }
 
   return (
@@ -184,8 +193,13 @@ function App() {
       <Route element={<ProtectedLayout />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/proyectos/:projectId" element={<Navigate to="resumen" replace />} />
+        <Route path="/proyectos/:projectId/resumen" element={<ProjectResumenPage />} />
         <Route path="/proyectos/:projectId/tablero" element={<BoardPage />} />
         <Route path="/proyectos/:projectId/backlog" element={<BacklogPage />} />
+        <Route path="/proyectos/:projectId/calendario" element={<CalendarPage />} />
+        <Route path="/proyectos/:projectId/cronograma" element={<TimelinePage />} />
+        <Route path="/proyectos/:projectId/informes" element={<InformesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/settings" element={<SettingsPage />} />

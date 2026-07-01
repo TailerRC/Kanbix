@@ -9,9 +9,10 @@
  *
  * Accesible en: /admin/users (protegida por rol Admin en App.tsx)
  */
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useAdminUsers } from '../hooks/useAdminUsers';
 import { getErrorMessage } from '../../../shared/api/api';
+import { useAuth } from '../../../shared/auth/AuthContext';
 import Icon from '../../../shared/components/Icon';
 import type { RolGlobal } from '../../../shared/types';
 import './AdminUsersPage.css';
@@ -56,35 +57,117 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
   const [rol, setRol]               = useState<RolGlobal>('Developer');
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
+  const [showPass, setShowPass]     = useState(false);
+  const [emailError, setEmailError] = useState('');
+
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // H7: autoFocus en el primer input al abrir el modal
+  useEffect(() => {
+    nombreRef.current?.focus();
+  }, []);
+
+  // H4: focus trap + Escape key
+  useEffect(() => {
+    const modal = overlayRef.current;
+    if (!modal) return;
+
+    const FOCUSABLE = 'input:not([type="hidden"]), select, textarea, button, [tabindex]:not([tabindex="-1"])';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const focusable = modal.querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Validaciones en tiempo real de contraseña (H5 - Prevención de Errores)
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber    = /[0-9]/.test(password);
+  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
+
+  // Validación inline de email (H5)
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = email.length === 0 || EMAIL_RE.test(email);
+  const showEmailError = email.length > 0 && !isEmailValid;
+
+  const passwordRulesCount = [hasMinLength, hasUppercase, hasLowercase, hasNumber].filter(Boolean).length;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setEmailError('');
+
+    if (!nombre.trim()) {
+      setError('El nombre completo es obligatorio.');
+      nombreRef.current?.focus();
+      return;
+    }
+    if (!isEmailValid) {
+      setError('Ingresá un correo electrónico válido.');
+      return;
+    }
+    if (!isPasswordValid) {
+      setError('La contraseña debe cumplir con todos los requisitos.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
       await onSubmit({ email, password, nombre_completo: nombre, rol_global: rol });
       onClose();
     } catch (err) {
-      setError(getErrorMessage(err, 'No se pudo crear el usuario'));
+      const msg = getErrorMessage(err, 'No se pudo crear el usuario');
+      // Parsear si el error es del email ya registrado → mostrarlo inline
+      if (msg.toLowerCase().includes('email') && (msg.toLowerCase().includes('registr') || msg.toLowerCase().includes('exist'))) {
+        setEmailError(msg);
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="admin-modal__overlay" onClick={onClose}>
+    <div className="admin-modal__overlay" onClick={onClose} ref={overlayRef}>
       <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal__header">
           <h2 className="admin-modal__title">Nuevo usuario</h2>
           <button className="admin-modal__close" onClick={onClose} aria-label="Cerrar">✕</button>
         </div>
 
-        {error && <div className="admin-modal__error">{error}</div>}
+        {error && !emailError && <div className="admin-modal__error" role="alert">{error}</div>}
 
-        <form className="admin-modal__form" onSubmit={handleSubmit}>
+        <form className="admin-modal__form" onSubmit={handleSubmit} noValidate>
           <label className="admin-modal__field">
             <span>Nombre completo</span>
             <input
+              ref={nombreRef}
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -94,28 +177,76 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
             />
           </label>
 
-          <label className="admin-modal__field">
+          <div className={`admin-modal__field ${showEmailError || emailError ? 'admin-modal__field--has-error' : ''}`}>
             <span>Correo electrónico</span>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
               placeholder="usuario@kanbix.com"
               required
+              aria-invalid={showEmailError || !!emailError}
+              aria-describedby={showEmailError ? 'email-error-hint' : undefined}
             />
-          </label>
+            {showEmailError && (
+              <small id="email-error-hint" className="admin-modal__field-error">
+                Formato de correo inválido — ejemplo: usuario@kanbix.com
+              </small>
+            )}
+            {emailError && !showEmailError && (
+              <small className="admin-modal__field-error">{emailError}</small>
+            )}
+          </div>
 
-          <label className="admin-modal__field">
+          <div className="admin-modal__field">
             <span>Contraseña inicial</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 8 car., mayúscula, minúscula y número"
-              required
-            />
+            <div className="admin-modal__password-input-wrapper">
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingresar contraseña inicial"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                className="admin-modal__password-toggle"
+                onClick={() => setShowPass(!showPass)}
+                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                tabIndex={0}
+              >
+                <Icon name={showPass ? 'eye-off' : 'eye'} size={16} />
+              </button>
+            </div>
+
+            {/* H5 + H10: Retroalimentación visual de reglas con progreso */}
+            <div className="admin-modal__password-strength">
+              <div
+                className="admin-modal__password-strength-bar"
+                style={{ width: `${(passwordRulesCount / 4) * 100}%` }}
+              />
+            </div>
+            <div className="admin-modal__password-rules">
+              <div className={`admin-modal__rule ${hasMinLength ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasMinLength ? '✓' : '○'}</span>
+                <span>Mínimo 8 caracteres</span>
+              </div>
+              <div className={`admin-modal__rule ${hasUppercase ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasUppercase ? '✓' : '○'}</span>
+                <span>Al menos una mayúscula</span>
+              </div>
+              <div className={`admin-modal__rule ${hasLowercase ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasLowercase ? '✓' : '○'}</span>
+                <span>Al menos una minúscula</span>
+              </div>
+              <div className={`admin-modal__rule ${hasNumber ? 'admin-modal__rule--valid' : ''}`}>
+                <span className="admin-modal__rule-icon">{hasNumber ? '✓' : '○'}</span>
+                <span>Al menos un número</span>
+              </div>
+            </div>
             <small>El usuario deberá cambiarla en su primer inicio de sesión.</small>
-          </label>
+          </div>
 
           <label className="admin-modal__field">
             <span>Rol global</span>
@@ -130,7 +261,11 @@ function CreateUserModal({ onClose, onSubmit }: CreateModalProps) {
             <button type="button" className="admin-modal__btn--cancel" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="admin-modal__btn--submit" disabled={loading}>
+            <button 
+              type="submit" 
+              className="admin-modal__btn--submit" 
+              disabled={loading || !isPasswordValid}
+            >
               {loading ? 'Creando…' : 'Crear usuario'}
             </button>
           </div>
@@ -153,6 +288,7 @@ interface EditModalProps {
 }
 
 function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
+  const { user: currentUser }       = useAuth();
   const [email, setEmail]           = useState(user.email);
   const [nombre, setNombre]         = useState(user.nombre_completo);
   const [password, setPassword]     = useState('');
@@ -160,6 +296,14 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
   const [activo, setActivo]         = useState(user.activo);
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -234,7 +378,7 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
 
           <label className="admin-modal__field">
             <span>Rol global</span>
-            <select value={rol} onChange={(e) => setRol(e.target.value as RolGlobal)}>
+            <select value={rol} onChange={(e) => setRol(e.target.value as RolGlobal)} disabled={user.id === currentUser?.id}>
               <option value="Viewer">Viewer</option>
               <option value="Developer">Developer</option>
               <option value="Manager">Manager</option>
@@ -247,6 +391,7 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
               type="checkbox"
               checked={activo}
               onChange={(e) => setActivo(e.target.checked)}
+              disabled={user.id === currentUser?.id}
             />
             <span>Cuenta activa / habilitada</span>
           </label>
@@ -270,6 +415,7 @@ function EditUserModal({ user, onClose, onSubmit }: EditModalProps) {
 // --------------------------------------------------------------------------
 
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth();
   const {
     users, total, page, limit, loading, error,
     setPage, refresh, createUser, unlockUser, changeRole, updateUser,
@@ -390,6 +536,7 @@ export default function AdminUsersPage() {
                       value={u.rol_global}
                       onChange={(e) => handleRoleChange(u.id, e.target.value as RolGlobal)}
                       style={{ '--badge-color': ROL_LABELS[u.rol_global]?.color } as React.CSSProperties}
+                      disabled={u.id === currentUser?.id}
                     >
                       <option value="Viewer">Viewer</option>
                       <option value="Developer">Developer</option>
@@ -412,7 +559,8 @@ export default function AdminUsersPage() {
                       <button
                         className={`admin-users__action-btn admin-users__action-btn--power admin-users__action-btn--power-${u.activo ? 'active' : 'inactive'}`}
                         onClick={() => handleToggleActive(u.id, u.activo)}
-                        title={u.activo ? "Desactivar cuenta" : "Activar cuenta"}
+                        title={u.id === currentUser?.id ? "No podés desactivar tu propia cuenta" : (u.activo ? "Desactivar cuenta" : "Activar cuenta")}
+                        disabled={u.id === currentUser?.id}
                       >
                         <Icon name="power" size={14} />
                       </button>

@@ -11,6 +11,8 @@ from app.modules.reports.schemas import (
     DashboardSummary,
     VelocityItem,
     WorkloadItem,
+    SprintReportSummary,
+    SprintReportDetail,
 )
 from typing import List
 
@@ -45,3 +47,13 @@ async def velocity(project_id: str, current=Depends(get_current_user)):
 @router.get("/projects/{project_id}/reports/workload", response_model=List[WorkloadItem])
 async def workload(project_id: str, current=Depends(get_current_user)):
     return await controller.workload(get_database(), project_id, current)
+
+
+@router.get("/projects/{project_id}/reports/sprints-completed", response_model=List[SprintReportSummary])
+async def list_completed_sprints(project_id: str, current=Depends(get_current_user)):
+    return await controller.list_completed_sprints(get_database(), project_id, current)
+
+
+@router.get("/projects/{project_id}/reports/sprints-completed/{sprint_id}", response_model=SprintReportDetail)
+async def get_completed_sprint_detail(project_id: str, sprint_id: str, current=Depends(get_current_user)):
+    return await controller.get_completed_sprint_detail(get_database(), project_id, sprint_id, current)

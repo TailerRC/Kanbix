@@ -436,14 +436,6 @@ function BacklogContent() {
   };
 
   const handleCreateSprint = async () => {
-    // RN: solo un sprint sin cerrar a la vez (no crear si hay pendiente/activo).
-    if (unfinishedSprint) {
-      alert(
-        `No puedes crear un nuevo sprint mientras "${unfinishedSprint.name}" no esté completado. ` +
-        `Completa o cierra el sprint actual primero.`
-      );
-      return;
-    }
     const num = sprints.length + 1;
     // Fechas por defecto: hoy → +14 días (ciclo Scrum de 2 semanas).
     const start = new Date();
@@ -532,8 +524,6 @@ function BacklogContent() {
             <button
               className="k-btn-primary"
               onClick={handleCreateSprint}
-              disabled={!!unfinishedSprint}
-              title={unfinishedSprint ? `Completa "${unfinishedSprint.name}" antes de crear otro sprint` : 'Crear un nuevo sprint'}
             >
               <Icon name="plus" size={14} /> Crear Sprint
             </button>

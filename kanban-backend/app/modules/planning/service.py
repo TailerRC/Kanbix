@@ -281,6 +281,46 @@ async def complete_sprint(db, sprint_id: str, current_user: dict, move_incomplet
 
     now = datetime.now(timezone.utc)
 
+    # Compilar reporte detallado del sprint para el Manager
+    member_ids = [t["assignee_id"] for t in tasks if t.get("assignee_id")]
+    names = {}
+    if member_ids:
+        async for u in db.users.find({"_id": {"$in": member_ids}}, {"nombre_completo": 1}):
+            names[str(u["_id"])] = u.get("nombre_completo", "")
+
+    task_snapshots = []
+    for t in tasks:
+        task_snapshots.append({
+            "id": str(t["_id"]),
+            "title": t["title"],
+            "status": t["status"],
+            "priority": t.get("priority", "Media"),
+            "assignee_name": names.get(str(t.get("assignee_id")), "Sin asignar") if t.get("assignee_id") else "Sin asignar",
+            "story_points": float(t.get("story_points") or 1.0),
+            "due_date": t.get("due_date").isoformat() if t.get("due_date") else None,
+            "subtasks_count": len(t.get("subtasks", [])),
+            "completed_subtasks_count": sum(1 for s in t.get("subtasks", []) if s.get("completed")),
+        })
+
+    report_doc = {
+        "project_id": sprint["project_id"],
+        "sprint_id": sprint["_id"],
+        "sprint_name": sprint["name"],
+        "goal": sprint.get("goal"),
+        "start_date": sprint.get("start_date") or sprint.get("fecha_inicio"),
+        "end_date": sprint.get("end_date") or sprint.get("fecha_fin"),
+        "completed_at": now,
+        "completed_by": to_object_id(current_user["sub"], "current_user", "Usuario"),
+        "metrics": {
+            "committed_points": float(committed_points),
+            "completed_points": float(completed_points),
+            "total_tasks": int(total_tasks),
+            "completed_tasks": int(completed_tasks),
+        },
+        "tasks": task_snapshots,
+    }
+    await db.sprint_reports.insert_one(report_doc)
+
     # Mover las tareas NO finalizadas fuera del sprint (backlog u otro sprint).
     await db.tasks.update_many(
         {"sprint_id": oid, "status": {"$ne": "Done"}},

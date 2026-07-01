@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import Icon from '../../../shared/components/Icon';
 import DatePickerPopover from './DatePickerPopover';
 import { useBoard } from '../context/BoardContext';
+import { useAuth } from '../../../shared/auth/AuthContext';
 import type { TaskType } from '../../../shared/types';
 import './TaskDetailModal.css';
 
@@ -19,7 +20,14 @@ const TASK_TYPES: { type: TaskType; label: string; icon: string; color: string }
 ];
 
 export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProps) {
-  const { board, sprints, updateTaskOptimistic } = useBoard();
+  const { project, board, sprints, updateTaskOptimistic, deleteTaskOptimistic } = useBoard();
+  const { user } = useAuth();
+
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+
+  const [isAddingDep, setIsAddingDep] = useState(false);
+  const [selectedDepTaskId, setSelectedDepTaskId] = useState('');
 
   // ─── Derive task reactively from board context on every render ────────────
   // This is the FIX for the desync bug: we don't store a copy in local state —
@@ -33,16 +41,17 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
     }
   }
 
+  const allTasks = board?.columns.flatMap(c => c.tasks) || [];
+  const otherTasks = allTasks.filter(t => t.id !== taskId && !(task?.dependencies || []).includes(t.id));
+
   // Local states only for text fields being actively edited (not yet saved)
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(task?.title ?? '');
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [descValue, setDescValue] = useState((task as any)?.description ?? '');
-  const [isEditingPoints, setIsEditingPoints] = useState(false);
-  const [pointsValue, setPointsValue] = useState<string>(String(task?.story_points ?? ''));
+  const [devInfoValue, setDevInfoValue] = useState((task as any)?.dev_info ?? '');
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(true);
-  const [devOpen, setDevOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
   const typeMenuRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +61,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
     if (task && prevTaskId.current !== task.id) {
       setTitleValue(task.title);
       setDescValue((task as any).description ?? '');
-      setPointsValue(String(task.story_points ?? ''));
+      setDevInfoValue((task as any).dev_info ?? '');
       prevTaskId.current = task.id;
     }
   }, [task?.id]);
@@ -109,13 +118,66 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
     }
   };
 
-  const handlePointsSave = () => {
-    setIsEditingPoints(false);
-    const num = parseInt(pointsValue, 10);
-    const oldVal = task!.story_points ?? null;
-    const newVal = isNaN(num) ? null : num;
-    if (newVal !== oldVal) {
-      handleUpdate('story_points', { story_points: newVal });
+
+
+  const handleAddSubtask = async () => {
+    if (!newSubtaskTitle.trim() || !task) return;
+    try {
+      const { planningApi } = await import('../../planning/api/planningApi');
+      const res = await planningApi.addSubtask(taskId, newSubtaskTitle.trim());
+      const updatedSubtasks = [...(task.subtasks || []), {
+        subtask_id: res.subtask_id,
+        title: res.title,
+        completed: res.completed
+      }];
+      await updateTaskOptimistic(taskId, { subtasks: updatedSubtasks });
+      setNewSubtaskTitle('');
+      setIsAddingSubtask(false);
+    } catch (err) {
+      alert('Error al agregar la subtarea.');
+    }
+  };
+
+  const handleToggleSubtask = async (subtaskId: string) => {
+    if (!task) return;
+    try {
+      const { planningApi } = await import('../../planning/api/planningApi');
+      const res = await planningApi.toggleSubtask(taskId, subtaskId);
+      const updatedSubtasks = (task.subtasks || []).map(s =>
+        s.subtask_id === subtaskId ? { ...s, completed: res.completed } : s
+      );
+      await updateTaskOptimistic(taskId, { subtasks: updatedSubtasks });
+    } catch (err) {
+      alert('Error al actualizar la subtarea.');
+    }
+  };
+
+  const handleAddDependency = async () => {
+    if (!selectedDepTaskId || !task) return;
+    try {
+      const { planningApi } = await import('../../planning/api/planningApi');
+      const res = await planningApi.addDependency(taskId, selectedDepTaskId);
+      await updateTaskOptimistic(taskId, { dependencies: res.dependencies });
+      setSelectedDepTaskId('');
+      setIsAddingDep(false);
+    } catch (err) {
+      alert('Error al registrar la actividad vinculada.');
+    }
+  };
+
+  const currentUserMember = project?.members?.find(m => m.user_id === user?.id);
+  const isManager = currentUserMember?.rol === 'Manager' || user?.rol_global === 'Admin';
+  const isDeveloper = currentUserMember?.rol === 'Developer' && user?.rol_global !== 'Admin';
+
+  const handleDeleteTask = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta tarea de forma permanente? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    try {
+      await deleteTaskOptimistic(taskId);
+      onClose();
+    } catch (err) {
+      alert('Error al eliminar la tarea.');
     }
   };
 
@@ -125,9 +187,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
 
         {/* Header action buttons */}
         <div className="k-modal-header-actions">
-          <button className="k-modal-btn" title="Compartir"><Icon name="share-2" size={16} /></button>
-          <button className="k-modal-btn" title="Opciones"><Icon name="more-horizontal" size={16} /></button>
-          <button className="k-modal-btn k-modal-close" onClick={onClose} title="Cerrar (Esc)"><Icon name="x" size={18} /></button>
+          <button className="k-modal-close-btn" onClick={onClose} title="Cerrar (Esc)"><Icon name="x" size={16} /></button>
         </div>
 
         <div className="k-modal-layout">
@@ -209,14 +269,140 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
             {/* Subtasks */}
             <div className="k-modal-section">
               <h3>Subtareas</h3>
-              <button className="k-modal-placeholder-btn"><Icon name="plus" size={14} /> Añadir subtarea</button>
+              <div className="k-subtasks-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                {(task.subtasks || []).map(sub => (
+                  <div key={sub.subtask_id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={sub.completed}
+                      onChange={() => handleToggleSubtask(sub.subtask_id)}
+                      style={{ cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+                    />
+                    <span style={{
+                      fontSize: '0.9rem',
+                      textDecoration: sub.completed ? 'line-through' : 'none',
+                      color: sub.completed ? 'var(--color-text-muted)' : 'var(--color-text-primary)'
+                    }}>
+                      {sub.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              {isAddingSubtask ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    placeholder="Título de la subtarea..."
+                    className="k-modal-desc-input"
+                    value={newSubtaskTitle}
+                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                    style={{ fontSize: '0.85rem', padding: '6px 10px', flex: 1, border: '1px solid var(--color-border)', borderRadius: '4px', background: 'var(--color-surface)' }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddSubtask();
+                      if (e.key === 'Escape') setIsAddingSubtask(false);
+                    }}
+                    autoFocus
+                  />
+                  <button className="k-btn-primary" onClick={handleAddSubtask} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                    Añadir
+                  </button>
+                  <button className="k-btn-text" onClick={() => setIsAddingSubtask(false)} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button className="k-modal-placeholder-btn" onClick={() => setIsAddingSubtask(true)}>
+                  <Icon name="plus" size={14} /> Añadir subtarea
+                </button>
+              )}
             </div>
 
             {/* Linked activities */}
             <div className="k-modal-section">
               <h3>Actividades vinculadas</h3>
-              <button className="k-modal-placeholder-btn"><Icon name="plus" size={14} /> Añadir actividad vinculada</button>
+              <div className="k-dependencies-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+                {(task.dependencies || []).map(depId => {
+                  const depTask = allTasks.find(t => t.id === depId);
+                  return (
+                    <div key={depId} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--color-text)', background: 'var(--color-bg)', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+                      <Icon name="link" size={14} style={{ color: 'var(--color-text-light)' }} />
+                      <span style={{ fontWeight: 500 }}>
+                        {depTask ? `${depTask.title} (${depTask.id.substring(depTask.id.length - 6).toUpperCase()})` : `Tarea ID: ${depId}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {isAddingDep ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    className="k-modal-select-inline"
+                    value={selectedDepTaskId}
+                    onChange={(e) => setSelectedDepTaskId(e.target.value)}
+                    style={{ fontSize: '0.85rem', flex: 1 }}
+                  >
+                    <option value="">Seleccionar tarea...</option>
+                    {otherTasks.map(t => (
+                      <option key={t.id} value={t.id}>{t.title} ({t.id.substring(t.id.length - 6).toUpperCase()})</option>
+                    ))}
+                  </select>
+                  <button className="k-btn-primary" onClick={handleAddDependency} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                    Añadir
+                  </button>
+                  <button className="k-btn-text" onClick={() => setIsAddingDep(false)} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button className="k-modal-placeholder-btn" onClick={() => setIsAddingDep(true)}>
+                  <Icon name="plus" size={14} /> Añadir actividad vinculada
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* ── INFO DE DESARROLLO (dev_info) ── */}
+          <div className="k-modal-section">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Icon name="code" size={14} style={{ color: 'var(--color-primary)' }} />
+              Información de Desarrollo
+            </h3>
+            <textarea
+              className="k-modal-dev-info"
+              placeholder="Describe los cambios realizados, URLs de PR/branch, notas técnicas..."
+              value={devInfoValue}
+              onChange={(e) => setDevInfoValue(e.target.value)}
+              onBlur={() => {
+                const trimmed = devInfoValue.trim();
+                const current = (task as any).dev_info ?? '';
+                if (trimmed !== current) {
+                  handleUpdate('dev_info', { dev_info: trimmed || null });
+                }
+              }}
+              rows={4}
+              style={{
+                width: '100%',
+                resize: 'vertical',
+                fontSize: '0.85rem',
+                padding: '10px 12px',
+                border: '1px solid var(--color-border)',
+                borderRadius: '8px',
+                background: 'var(--color-bg)',
+                color: 'var(--color-text-primary)',
+                lineHeight: 1.5,
+                fontFamily: 'inherit',
+                outline: 'none',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={(e) => { e.target.style.borderColor = 'var(--color-primary)'; }}
+            />
+            {isDeveloper && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: '4px 0 0 0' }}>
+                Los cambios se guardan automáticamente al salir del campo.
+              </p>
+            )}
           </div>
 
           {/* ── RIGHT COLUMN ── */}
@@ -254,14 +440,38 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                   {/* Responsable */}
                   <div className="k-modal-detail-row">
                     <span className="k-modal-detail-label">Responsable</span>
-                    <div className="k-modal-detail-value">
-                      {task.assignee ? (
-                        <span className="k-user-tag"><Icon name="user" size={14} /> {task.assignee}</span>
-                      ) : (
-                        <span className="k-empty-val">
-                          Sin asignar{' '}
-                          <span className="k-link" onClick={() => handleUpdate('assignee', { assignee: 'Yo' })}>Asignarme a mí</span>
-                        </span>
+                    <div className="k-modal-detail-value" style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                      <select
+                        className="k-modal-select-inline"
+                        value={task.assignee_id || ''}
+                        onChange={(e) => {
+                          const val = e.target.value || null;
+                          const member = project?.members?.find(m => m.user_id === val);
+                          handleUpdate('assignee_id', {
+                            assignee_id: val,
+                            assignee: member ? member.nombre_completo : null
+                          });
+                        }}
+                        style={{ width: '100%' }}
+                      >
+                        <option value="">Sin asignar</option>
+                        {project?.members?.map(m => (
+                          <option key={m.user_id} value={m.user_id}>{m.nombre_completo}</option>
+                        ))}
+                      </select>
+                      {user && task.assignee_id !== user.id && project?.members?.some(m => m.user_id === user.id) && (
+                        <div style={{ marginTop: '2px' }}>
+                          <span
+                            className="k-link"
+                            onClick={() => handleUpdate('assignee_id', {
+                              assignee_id: user.id,
+                              assignee: user.nombre_completo
+                            })}
+                            style={{ fontSize: '0.8rem', cursor: 'pointer', color: 'var(--color-primary)', textDecoration: 'underline' }}
+                          >
+                            Asignarme a mí
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -319,26 +529,6 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     </div>
                   </div>
 
-                  {/* Etiquetas */}
-                  <div className="k-modal-detail-row">
-                    <span className="k-modal-detail-label">Etiquetas</span>
-                    <div className="k-modal-detail-value">
-                      {task.tags && task.tags.length > 0 ? (
-                        task.tags.map(t => <span key={t} className="k-tag-pill">{t}</span>)
-                      ) : (
-                        <span className="k-empty-val">Ninguna</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Team */}
-                  <div className="k-modal-detail-row">
-                    <span className="k-modal-detail-label">Team</span>
-                    <div className="k-modal-detail-value">
-                      <span className="k-empty-val">Ninguno</span>
-                    </div>
-                  </div>
-
                   {/* Fecha de inicio */}
                   <div className="k-modal-detail-row">
                     <span className="k-modal-detail-label">Fecha de inicio</span>
@@ -358,35 +548,6 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     </div>
                   </div>
 
-                  {/* NOTA: Sprint ya está arriba (líneas 262-277) con selector funcional.
-                      Este bloque duplicado "Sin sprint" fue eliminado en PARTE 2B. */}
-
-                  {/* Story points */}
-                  <div className="k-modal-detail-row">
-                    <span className="k-modal-detail-label">Story points</span>
-                    <div className="k-modal-detail-value">
-                      {isEditingPoints ? (
-                        <input
-                          autoFocus
-                          type="number"
-                          min={0}
-                          className="k-modal-inline-input"
-                          value={pointsValue}
-                          onChange={(e) => setPointsValue(e.target.value)}
-                          onBlur={handlePointsSave}
-                          onKeyDown={(e) => { if (e.key === 'Enter') handlePointsSave(); if (e.key === 'Escape') { setIsEditingPoints(false); setPointsValue(String(task!.story_points ?? '')); } }}
-                        />
-                      ) : (
-                        <span
-                          className={task.story_points == null ? 'k-empty-val k-editable' : 'k-editable'}
-                          onClick={() => setIsEditingPoints(true)}
-                        >
-                          {task.story_points ?? 'Ninguno'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Informador (read-only) */}
                   <div className="k-modal-detail-row">
                     <span className="k-modal-detail-label">Informador</span>
@@ -402,16 +563,33 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               )}
             </div>
 
-            {/* ── Desarrollo section ── */}
-            <div className="k-modal-details" style={{ marginTop: 16 }}>
-              <div className="k-modal-details-header" onClick={() => setDevOpen(v => !v)}>
-                <h3>Desarrollo</h3>
-                <Icon name={devOpen ? 'chevron-up' : 'chevron-down'} size={16} />
-              </div>
-              {devOpen && (
-                <p className="k-modal-placeholder-text">Sin actividad de desarrollo vinculada.</p>
-              )}
-            </div>
+            {/* Delete button for Managers/Admins */}
+            {isManager && (
+              <button
+                className="k-delete-task-btn"
+                onClick={handleDeleteTask}
+                style={{
+                  marginTop: '24px',
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: 'transparent',
+                  border: '1px solid var(--color-danger, #ef4444)',
+                  color: 'var(--color-danger, #ef4444)',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease-in-out'
+                }}
+              >
+                <Icon name="trash-2" size={14} />
+                Eliminar tarea
+              </button>
+            )}
           </div>
         </div>
       </div>

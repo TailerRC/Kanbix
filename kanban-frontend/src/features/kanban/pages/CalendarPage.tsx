@@ -5,6 +5,7 @@ import ProjectViewHeader from '../../../shared/components/ProjectViewHeader';
 import { getErrorMessage } from '../../../shared/api/api';
 import { getProject } from '../../projects/api/projectsApi';
 import { listProjectTasks, updateTask } from '../api/kanbanApi';
+import { useAuth } from '../../../shared/auth/AuthContext';
 import type { TaskCard } from '../../../shared/types';
 import './CalendarPage.css';
 
@@ -37,8 +38,10 @@ function buildMonthGrid(year: number, month: number): Date[] {
 
 export default function CalendarPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const { user } = useAuth();
+  const [project, setProject] = useState<any>(null);
   const [projectName, setProjectName] = useState('');
-  const [tasks, setTasks] = useState<TaskCard[]>([]);
+  const [allTasks, setAllTasks] = useState<TaskCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cursor, setCursor] = useState(() => new Date());
@@ -50,12 +53,21 @@ export default function CalendarPage() {
     setLoading(true);
     Promise.all([getProject(projectId), listProjectTasks(projectId)])
       .then(([proj, t]) => {
+        setProject(proj);
         setProjectName(proj.name);
-        setTasks(t);
+        setAllTasks(t);
       })
       .catch((err) => setError(getErrorMessage(err, 'No se pudo cargar el calendario')))
       .finally(() => setLoading(false));
   }, [projectId]);
+
+  const currentUserMember = project?.members?.find((m: any) => m.user_id === user?.id);
+  const isDeveloper = currentUserMember?.rol === 'Developer' && user?.rol_global !== 'Admin';
+
+  // Developer only sees their own assigned tasks
+  const tasks = isDeveloper
+    ? allTasks.filter((t) => t.assignee_id === user?.id)
+    : allTasks;
 
   const days = useMemo(() => buildMonthGrid(cursor.getFullYear(), cursor.getMonth()), [cursor]);
 
@@ -80,12 +92,12 @@ export default function CalendarPage() {
     setDragId(null);
     if (!taskId) return;
     const iso = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0).toISOString();
-    const prev = tasks;
-    setTasks((cur) => cur.map((t) => (t.id === taskId ? { ...t, due_date: iso } : t)));
+    const prevAll = allTasks;
+    setAllTasks((cur) => cur.map((t) => (t.id === taskId ? { ...t, due_date: iso } : t)));
     try {
       await updateTask(taskId, { due_date: iso });
     } catch (err) {
-      setTasks(prev);
+      setAllTasks(prevAll);
       alert(getErrorMessage(err, 'No se pudo actualizar la fecha'));
     }
   };

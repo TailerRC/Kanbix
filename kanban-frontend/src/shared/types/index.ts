@@ -39,6 +39,12 @@ export interface Paginated<T> {
   data: T[];
 }
 
+export interface Subtask {
+  subtask_id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface TaskCard {
   id: string;
   title: string;
@@ -54,6 +60,9 @@ export interface TaskCard {
   creator_name?: string | null;
   status?: string;
   sprint_id?: string | null;
+  subtasks?: Subtask[];
+  dependencies?: string[];
+  dev_info?: string | null;
 }
 
 export interface BoardColumn {

@@ -20,4 +20,15 @@ export const planningApi = {
 
   deleteSprint: (sprintId: string): Promise<void> =>
     api.delete(`/sprints/${sprintId}`).then(() => undefined),
+
+  // Subtasks
+  addSubtask: (taskId: string, title: string): Promise<{ subtask_id: string; parent_id: string; title: string; completed: boolean }> =>
+    api.post(`/tasks/${taskId}/subtasks`, { title }).then(res => res.data),
+
+  toggleSubtask: (taskId: string, subtaskId: string): Promise<{ subtask_id: string; completed: boolean }> =>
+    api.patch(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`, {}).then(res => res.data),
+
+  // Dependencies
+  addDependency: (taskId: string, dependsOnTaskId: string): Promise<{ message: string; task_id: string; dependencies: string[] }> =>
+    api.post(`/tasks/${taskId}/dependencies`, { depends_on_task_id: dependsOnTaskId }).then(res => res.data),
 };

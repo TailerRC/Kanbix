@@ -123,6 +123,16 @@ async def get_board_detail(db, project_id: str, board_id: str, current_user: dic
                 "creator_name": assignee_names.get(str(t.get("creator_id"))) if t.get("creator_id") else None,
                 "status": t.get("status"),
                 "sprint_id": str(t["sprint_id"]) if t.get("sprint_id") else None,
+                "dev_info": t.get("dev_info"),
+                "subtasks": [
+                    {
+                        "subtask_id": str(sub["subtask_id"]),
+                        "title": sub["title"],
+                        "completed": sub.get("completed", False)
+                    }
+                    for sub in t.get("subtasks", [])
+                ],
+                "dependencies": [str(d) for d in t.get("dependencies", [])],
             })
         columns.append({
             "id": str(col["_id"]),
@@ -229,6 +239,7 @@ async def list_project_tasks(db, project_id: str, current_user: dict) -> list[di
             "board_id": str(t["board_id"]) if t.get("board_id") else None,
             "task_type": t.get("task_type", "Tarea"),
             "tags": t.get("tags", []),
+            "dev_info": t.get("dev_info"),
         })
     return tasks
 
@@ -277,13 +288,23 @@ async def create_task(db, board_id: str, payload: TaskCreate, current_user: dict
         position=position,
         start_date=payload.start_date,
         sprint_id=sprint_oid,
+        dev_info=payload.dev_info,
     )
     result = await db.tasks.insert_one(doc)
 
     if assignee_oid:
+        project_name = project.get("name", "")
+        creator_doc = await db.users.find_one({"_id": to_object_id(current_user["sub"], "creator_id", "Usuario")})
+        creator_name = creator_doc.get("nombre_completo", creator_doc.get("email", "—")) if creator_doc else "—"
         await notify(db, payload.assignee_id, TAREA_ASIGNADA,
                      f"Se te ha asignado la tarea: {payload.title}",
-                     {"tarea_id": str(result.inserted_id), "titulo": payload.title})
+                     {
+                         "tarea_id": str(result.inserted_id),
+                         "titulo": payload.title,
+                         "proyecto": project_name,
+                         "asignado_por": creator_name,
+                         "deadline": payload.due_date.strftime("%d/%m/%Y") if payload.due_date else None,
+                     })
 
     return {
         "id": str(result.inserted_id),
@@ -321,9 +342,20 @@ async def update_task(db, task_id: str, payload: TaskUpdate, current_user: dict)
     await db.tasks.update_one({"_id": task["_id"]}, {"$set": updates})
 
     if new_assignee and str(task.get("assignee_id")) != new_assignee:
+        project_name = project.get("name", "")
+        actor_doc = await db.users.find_one({"_id": to_object_id(str(current_user["sub"]), "sub", "Usuario")})
+        actor_name = actor_doc.get("nombre_completo", actor_doc.get("email", "—")) if actor_doc else "—"
+        due = task.get("due_date")
+        deadline_str = due.strftime("%d/%m/%Y") if due else None
         await notify(db, new_assignee, TAREA_ASIGNADA,
                      f"Se te ha asignado la tarea: {task['title']}",
-                     {"tarea_id": task_id, "titulo": task["title"]})
+                     {
+                         "tarea_id": task_id,
+                         "titulo": task["title"],
+                         "proyecto": project_name,
+                         "asignado_por": actor_name,
+                         "deadline": deadline_str,
+                     })
 
     return {"id": task_id, "title": updates.get("title", task["title"]), "updated_at": updates["updated_at"]}
 
@@ -370,6 +402,11 @@ async def move_task(db, task_id: str, payload: TaskMove, current_user: dict) -> 
     actor = str(current_user.get("sub"))
     assignee = task.get("assignee_id")
 
+    actor_doc = await db.users.find_one({"_id": ObjectId(actor)})
+    actor_name = actor_doc.get("nombre_completo", actor_doc.get("email", "—")) if actor_doc else "—"
+    project_doc = await db.projects.find_one({"_id": task.get("project_id")})
+    project_name = project_doc.get("name", "—") if project_doc else "—"
+
     if destino == "Done":
         # RN-29: al completar una tarea, notifica a los interesados (asignado y
         # creador). Si el propio actor es el único interesado, le confirma a él.
@@ -384,15 +421,25 @@ async def move_task(db, task_id: str, payload: TaskMove, current_user: dict) -> 
         for uid in recipients:
             await notify(db, uid, TAREA_COMPLETADA,
                          f"La tarea '{task['title']}' fue completada",
-                         {"tarea_id": task_id, "titulo": task["title"],
-                          "proyecto_id": str(task["project_id"])})
+                         {
+                             "tarea_id": task_id,
+                             "titulo": task["title"],
+                             "proyecto": project_name,
+                             "proyecto_id": str(task["project_id"]),
+                         })
     else:
         # Notifica al asignado del movimiento (si no es quien lo movió).
         if assignee and str(assignee) != actor:
             await notify(db, str(assignee), TAREA_MOVIDA,
                          f"La tarea '{task['title']}' se movió a {destino}",
-                         {"tarea_id": task_id, "titulo": task["title"],
-                          "columna_anterior": origen, "columna_nueva": destino})
+                         {
+                             "tarea_id": task_id,
+                             "titulo": task["title"],
+                             "proyecto": project_name,
+                             "movido_por": actor_name,
+                             "columna_anterior": origen,
+                             "columna_nueva": destino,
+                         })
 
     return {"id": task_id, "column_id": str(dest["_id"]), "position": position, "status": destino}
 

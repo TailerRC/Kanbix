@@ -24,3 +24,11 @@ async def velocity(db, project_id, current):
 
 async def workload(db, project_id, current):
     return await service.workload_report(db, project_id, current)
+
+
+async def list_completed_sprints(db, project_id, current):
+    return await service.list_completed_sprints_reports(db, project_id, current)
+
+
+async def get_completed_sprint_detail(db, project_id, sprint_id, current):
+    return await service.get_completed_sprint_report_detail(db, project_id, sprint_id, current)

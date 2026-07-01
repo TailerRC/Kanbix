@@ -275,3 +275,44 @@ async def workload_report(db, project_id: str, current_user: dict) -> list[dict]
             }
         )
     return result
+
+
+async def list_completed_sprints_reports(db, project_id: str, current_user: dict) -> list[dict]:
+    oid = to_object_id(project_id, "project_id", "Proyecto")
+    await ensure_project_access(db, oid, current_user, "Manager")
+
+    reports = []
+    async for r in db.sprint_reports.find({"project_id": oid}).sort("completed_at", -1):
+        reports.append({
+            "sprint_id": str(r["sprint_id"]),
+            "sprint_name": r["sprint_name"],
+            "goal": r.get("goal"),
+            "start_date": r.get("start_date"),
+            "end_date": r.get("end_date"),
+            "completed_at": r["completed_at"],
+            "metrics": r["metrics"],
+        })
+    return reports
+
+
+async def get_completed_sprint_report_detail(db, project_id: str, sprint_id: str, current_user: dict) -> dict:
+    oid = to_object_id(project_id, "project_id", "Proyecto")
+    await ensure_project_access(db, oid, current_user, "Manager")
+
+    sprint_oid = to_object_id(sprint_id, "sprint_id", "Sprint")
+    report = await db.sprint_reports.find_one({"project_id": oid, "sprint_id": sprint_oid})
+    if report is None:
+        raise APIError(404, "Reporte de sprint no encontrado", "sprint_id")
+
+    return {
+        "sprint_id": str(report["sprint_id"]),
+        "sprint_name": report["sprint_name"],
+        "goal": report.get("goal"),
+        "start_date": report.get("start_date"),
+        "end_date": report.get("end_date"),
+        "completed_at": report["completed_at"],
+        "metrics": report["metrics"],
+        "project_id": str(report["project_id"]),
+        "completed_by": str(report["completed_by"]),
+        "tasks": report["tasks"],
+    }

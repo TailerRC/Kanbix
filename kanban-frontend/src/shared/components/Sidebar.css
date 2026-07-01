@@ -28,24 +28,22 @@
   text-decoration: none;
 }
 
-/* Contenedor que recorta el whitespace interno del PNG */
+/* Contenedor del logo */
 .sidebar__logo-wrap {
   width: 100%;
-  max-width: 158px;
-  height: 44px;          /* Altura fija = solo la zona del logo, sin el espacio blanco */
-  overflow: hidden;
+  max-width: 160px;
+  height: 32px;
   display: flex;
   align-items: center;
+  overflow: visible;
 }
 
 .sidebar__logo-img {
-  width: 100%;
-  height: auto;
+  width: auto;
+  height: 100px;
   object-fit: contain;
   object-position: left center;
-  /* Escalar la imagen para compensar el whitespace interno del PNG */
-  transform: scale(1.45);
-  transform-origin: left center;
+  display: block;
   transition: opacity 0.2s ease;
 }
 
@@ -116,6 +114,14 @@
   align-items: center;
   justify-content: center;
   color: inherit;
+}
+
+.sidebar__nav-icon svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.sidebar__nav-item:hover .sidebar__nav-icon svg {
+  transform: scale(1.08);
 }
 
 .sidebar__nav-label {
@@ -242,20 +248,25 @@
   .sidebar {
     width: var(--sidebar-collapsed);
   }
+
   .sidebar__logo-img {
-    max-width: 36px; /* Mostrar solo la parte del ícono en modo colapsado */
+    max-width: 36px;
+    /* Mostrar solo la parte del ícono en modo colapsado */
     object-position: left;
   }
+
   .sidebar__section-label,
   .sidebar__cta,
   .sidebar__nav-label,
   .sidebar__nav-badge {
     display: none;
   }
+
   .sidebar__nav-item {
     justify-content: center;
     padding: 12px;
   }
+
   .sidebar__logout-btn {
     justify-content: center;
   }
@@ -265,10 +276,12 @@
   .sidebar {
     transform: translateX(-100%);
   }
+
   .sidebar--open {
     transform: translateX(0);
     width: var(--sidebar-width);
   }
+
   .sidebar--open .sidebar__logo-text,
   .sidebar--open .sidebar__section-label,
   .sidebar--open .sidebar__cta,
@@ -276,6 +289,7 @@
   .sidebar--open .sidebar__nav-badge {
     display: initial;
   }
+
   .sidebar--open .sidebar__nav-item {
     justify-content: flex-start;
     padding: 10px 14px;

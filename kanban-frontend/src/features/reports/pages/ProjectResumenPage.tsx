@@ -89,6 +89,29 @@ export default function ProjectResumenPage() {
   const [data, setData] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchOverviewData = (isBackground = false) => {
+    if (!projectId) return;
+    if (!isBackground) {
+      setRefreshing(true);
+    }
+    reportsApi.getOverview(projectId)
+      .then((overview) => {
+        setData(overview);
+        setError('');
+      })
+      .catch((err) => {
+        if (!isBackground) {
+          setError(getErrorMessage(err, 'No se pudo actualizar el resumen'));
+        }
+      })
+      .finally(() => {
+        if (!isBackground) {
+          setRefreshing(false);
+        }
+      });
+  };
 
   useEffect(() => {
     if (!projectId) return;
@@ -97,9 +120,17 @@ export default function ProjectResumenPage() {
       .then(([proj, overview]) => {
         setProjectName(proj.name);
         setData(overview);
+        setError('');
       })
       .catch((err) => setError(getErrorMessage(err, 'No se pudo cargar el resumen')))
       .finally(() => setLoading(false));
+
+    // Polling cada 7 segundos para que los gráficos sean actualizables a lo largo del tiempo
+    const interval = setInterval(() => {
+      fetchOverviewData(true);
+    }, 7000);
+
+    return () => clearInterval(interval);
   }, [projectId]);
 
   const statusData = useMemo(
@@ -117,9 +148,42 @@ export default function ProjectResumenPage() {
 
   if (!projectId) return null;
 
+  const handleManualRefresh = () => {
+    if (refreshing) return;
+    fetchOverviewData(false);
+  };
+
   return (
     <div className="resumen-page">
-      <ProjectViewHeader projectId={projectId} title={`${projectName || 'Proyecto'} — Resumen`} subtitle="Vistazo rápido del progreso del proyecto" />
+      <ProjectViewHeader
+        projectId={projectId}
+        title={`${projectName || 'Proyecto'} — Resumen`}
+        subtitle="Vistazo rápido del progreso del proyecto"
+        actions={
+          <button
+            className="btn btn--muted"
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              fontSize: '0.85rem',
+              borderRadius: 'var(--radius-pill)',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Icon name="refresh" className={refreshing ? 'spin' : ''} size={13} />
+            {refreshing ? 'Actualizando...' : 'Actualizar'}
+          </button>
+        }
+      />
 
       {loading && <div className="app-loader">Cargando resumen…</div>}
       {!loading && error && <div className="resumen-error">{error}</div>}

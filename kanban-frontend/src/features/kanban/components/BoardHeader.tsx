@@ -12,6 +12,7 @@ interface BoardHeaderProps {
   projectId?: string;
   activeSprintName?: string | null;
   onCompleteSprint?: () => void;
+  isDeveloper?: boolean;
 }
 
 export default function BoardHeader({
@@ -24,6 +25,7 @@ export default function BoardHeader({
   projectId,
   activeSprintName,
   onCompleteSprint,
+  isDeveloper = false,
 }: BoardHeaderProps) {
   return (
     <header className="board-page__header">
@@ -38,17 +40,19 @@ export default function BoardHeader({
         </div>
         <div className="board-page__actions">
           <GroupByDropdown value={groupBy} onChange={onGroupByChange} />
-          {activeSprintName && onCompleteSprint && (
+          {!isDeveloper && activeSprintName && onCompleteSprint && (
             <button className="board-page__complete btn btn--primary" onClick={onCompleteSprint}>
               <Icon name="check" size={16} /> Completar sprint
             </button>
           )}
-          <button
-            className="board-page__add btn btn--primary"
-            onClick={onNewTask}
-          >
-            <Icon name="plus" size={16} /> Nueva tarea
-          </button>
+          {!isDeveloper && (
+            <button
+              className="board-page__add btn btn--primary"
+              onClick={onNewTask}
+            >
+              <Icon name="plus" size={16} /> Nueva tarea
+            </button>
+          )}
         </div>
       </div>
 

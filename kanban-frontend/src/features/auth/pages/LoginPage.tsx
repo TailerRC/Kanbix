@@ -153,10 +153,6 @@ export default function LoginPage() {
               </>
             )}
           </button>
-
-          <p className="login__hint">
-            Cuenta de prueba: <strong>admin@kanbix.com</strong> / <strong>AdminNew123</strong>
-          </p>
         </form>
       </main>
     </div>
